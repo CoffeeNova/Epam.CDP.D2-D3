@@ -27,10 +27,14 @@ namespace V1.TaskAsync._02
 
         private void FillItemListWithTestData()
         {
-            ItemList.Add(new UrlListViewItem
-            {
-                Url = "http://ipv4.download.thinkbroadband.com:8080/200MB.zip"
-            });
+            var file200Mb = new UrlListViewItem {Url = "http://ipv4.download.thinkbroadband.com:8080/200MB.zip"};
+            var file100Mb = new UrlListViewItem { Url = "http://ipv4.download.thinkbroadband.com:8080/100MB.zip" };
+            var file50Mb = new UrlListViewItem { Url = "http://ipv4.download.thinkbroadband.com:8080/50MB.zip" };
+            var file20Mb = new UrlListViewItem { Url = "http://ipv4.download.thinkbroadband.com:8080/20MB.zip" };
+            ItemList.Add(file200Mb);
+            ItemList.Add(file100Mb);
+            ItemList.Add(file50Mb);
+            ItemList.Add(file20Mb);
         }
 
         private void UrlTextBox_KeyUp(object sender, KeyEventArgs e)
@@ -45,7 +49,7 @@ namespace V1.TaskAsync._02
             }
         }
 
-        private async Task<string> DownloadPageAsync(UrlListViewItem item, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadPageAsync(UrlListViewItem item, CancellationToken cancellationToken)
         {
             using (var client = new WebClient())
             using (cancellationToken.Register(CancellationRegisterAction(client, item)))
@@ -55,7 +59,7 @@ namespace V1.TaskAsync._02
                     client.DownloadProgressChanged += (sender, e) => DownloadProgressChanged(e, item);
                     client.DownloadStringCompleted += async (sender, e) => await Client_DownloadStringCompleted(item);
                     item.DownloadStatus = DownloadStatus.Downloading;
-                    return await client.DownloadStringTaskAsync(item.Url);
+                    return await client.DownloadDataTaskAsync(item.Url);
                 }
                 catch (Exception ex)
                 {
@@ -79,6 +83,11 @@ namespace V1.TaskAsync._02
         }
 
         private void DownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            StatrDownload();
+        }
+
+        private void StatrDownload()
         {
             if (!ItemList.Any())
                 return;
@@ -105,6 +114,20 @@ namespace V1.TaskAsync._02
             var content = await item.Content;
             if (content != null)
                 item.DownloadStatus = DownloadStatus.Downloaded;
+        }
+
+        private void DownloadsSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var newValue = Convert.ToInt32(e.NewValue);
+            ServicePointManager.DefaultConnectionLimit = newValue;
+
+            foreach (var i in ItemList)
+            {
+                var sp = ServicePointManager.FindServicePoint(new Uri(i.Url));
+                sp.ConnectionLimit = newValue;
+            }
+
+            StatrDownload();
         }
     }
 }

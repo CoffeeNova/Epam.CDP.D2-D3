@@ -42,6 +42,9 @@
         <Button x:Name="DownloadButton" Content="Download" HorizontalAlignment="Left" Margin="537,32,0,0" VerticalAlignment="Top" Width="141" Height="23" Click="DownloadButton_Click"/>
         <ListBox HorizontalAlignment="Left" Height="346" Margin="10,55,0,0" VerticalAlignment="Top" Width="668" ItemTemplate="{StaticResource ListTemplate}" ItemsSource="{Binding ItemList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
         </ListBox>
+        <Slider x:Name="DownloadsSlider" HorizontalAlignment="Left" Margin="320,32,0,0" VerticalAlignment="Top" Width="212" Height="23" Maximum="10" Minimum="1" Interval="1" ValueChanged="DownloadsSlider_ValueChanged"/>
+        <Label Content="Max parallel downloads:" HorizontalAlignment="Left" Margin="315,6,0,0" VerticalAlignment="Top" Width="141"/>
+        <Label Content="{Binding ElementName=DownloadsSlider, Path=Value}" ContentStringFormat="{}{0:N0}" HorizontalAlignment="Left" Margin="461,6,0,0" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

@@ -49,7 +49,7 @@ namespace V1.TaskAsync._02
             }
         }
 
-        public Task<string> Content { get; set; }
+        public Task<byte[]> Content { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]

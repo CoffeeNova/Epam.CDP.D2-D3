@@ -13,22 +13,28 @@ namespace V1.TaskAsync._01
         /// </summary>
         static void Main()
         {
-            CancellationTokenSource cts = null;
+            var semaphore = new Semaphore(0, 1);
+            var number = Helper.DigitsInput("Number =");
+
             while (true)
             {
-                var number = Helper.DigitsInput("Number =");
-                cts?.Cancel();
-                cts = new CancellationTokenSource();
-
-                _sumTask = SumAsync(number, cts);
-                _sumTask.ContinueWith(sum =>
+                using (var cts = new CancellationTokenSource())
                 {
-                    Console.WriteLine($"Sum = {sum.Result}");
-                }, TaskContinuationOptions.RunContinuationsAsynchronously);
-                _sumTask.ContinueWith(x =>
-                {
-                    Console.WriteLine("Restart calculations.");
-                }, TaskContinuationOptions.OnlyOnCanceled);
+                    _sumTask = SumAsync(number, cts);
+                    _sumTask.ContinueWith(sum =>
+                    {
+                        Console.WriteLine($"Sum = {sum.Result}");
+                        semaphore.Release();
+;                    }, TaskContinuationOptions.RunContinuationsAsynchronously);
+                    _sumTask.ContinueWith(x =>
+                    {
+                        Console.WriteLine("Restart calculations.");
+                        semaphore.Release();
+                    }, TaskContinuationOptions.OnlyOnCanceled);
+                    number = Helper.DigitsInput("Number =");
+                    cts.Cancel();
+                    semaphore.WaitOne();
+                }
             }
             // ReSharper disable once FunctionNeverReturns
         }
