@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace ExpressionTree._01
 {
-    public class Task1Transformer : ExpressionVisitor
+    public class Weirdransformer : ExpressionVisitor
     {
         protected override Expression VisitBinary(BinaryExpression node)
         {
