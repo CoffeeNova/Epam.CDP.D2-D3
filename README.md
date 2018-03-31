@@ -4,3 +4,9 @@ There are 2 different solutions in different folders. The task #4 from Async-Awa
 i had a similar task few weeks ago and I want to attach the link (the project from this repo also):
 https://github.com/isalzh/TravixOpp.TestProjectCore
 This project has examples of async CRUD operations.
+
+02. Expressions and IQueryable
+about Task #2 Expression Tree part: Realized mapper has contains very primitive implementation, this approach described by the lector
+in Q&A video part. Imho, it should be enough. Or not?
+about Task #1 IQueryable part: It seems that the task is outdated, requests are not executed as expected, but I tried to do my best
+and completed this part. 
