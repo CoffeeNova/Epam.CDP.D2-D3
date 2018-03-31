@@ -6,7 +6,7 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:converters="clr-namespace:Common.Converters;assembly=Common"
         mc:Ignorable="d"
-        Title="Wierd shop" Height="450" Width="630.576">
+        Title="Wierd shop" Height="450" Width="630.576" ResizeMode="NoResize">
     <Window.Resources>
         <converters:EnumToStringConverter x:Key="DefaultEnumToStringConverter"/>
         <DataTemplate x:Key="GoodsTemplate">
@@ -25,7 +25,36 @@
                     <TextBlock FontSize="16" Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Height="20" />
                 </StackPanel>
                 <StackPanel Margin="5" Grid.Column="2">
-                    <TextBlock FontSize="16" Text="{Binding Cost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Height="20" />
+                    <TextBox FontSize="16" Text="{Binding Cost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Height="20"/>
+                </StackPanel>
+                <StackPanel Margin="5" Grid.Column="3">
+                    <Button Content="{Binding ButtonContent, Converter = {StaticResource DefaultEnumToStringConverter}}">
+                        <i:Interaction.Triggers>
+                            <i:EventTrigger EventName="Click">
+                                <i:InvokeCommandAction Command="{Binding ButtonCommand}"/>
+                            </i:EventTrigger>
+                        </i:Interaction.Triggers>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="BucketGoodsTemplate">
+            <Grid Height ="Auto" Width="Auto">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="40"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="70"/>
+                    <ColumnDefinition Width="50*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="5" Grid.Column="0">
+                    <Image Source="{Binding Image}"/>
+                </StackPanel>
+                <StackPanel Margin="5" Grid.Column="1">
+                    <TextBlock FontSize="16" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Height="20" />
+                    <TextBlock FontSize="16" Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Height="20" />
+                </StackPanel>
+                <StackPanel Margin="5" Grid.Column="2">
+                    <TextBlock FontSize="16" Text="{Binding Cost, Mode=OneWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" Height="20"/>
                 </StackPanel>
                 <StackPanel Margin="5" Grid.Column="3">
                     <Button Content="{Binding ButtonContent, Converter = {StaticResource DefaultEnumToStringConverter}}">
@@ -41,12 +70,15 @@
     </Window.Resources>
     <Grid>
         <ListBox x:Name="Goods" Height="296" VerticalAlignment="Top" ItemTemplate="{StaticResource GoodsTemplate}" ItemsSource="{Binding GoodsList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="10,46,338,0" />
-        <ListBox x:Name="Bucket" HorizontalAlignment="Left" Height="296" Margin="335,44,0,0" VerticalAlignment="Top" Width="272" ItemTemplate="{StaticResource GoodsTemplate}" ItemsSource="{Binding BucketList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        <ListBox x:Name="Bucket" HorizontalAlignment="Left" Height="296" Margin="335,44,0,0" VerticalAlignment="Top" Width="272" ItemTemplate="{StaticResource BucketGoodsTemplate}" ItemsSource="{Binding BucketList, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         <Label Content="" HorizontalAlignment="Left" Margin="10,20,0,0" VerticalAlignment="Top" Width="178"/>
         <Label Content="Bucket:" HorizontalAlignment="Left" Margin="335,18,0,0" VerticalAlignment="Top" Width="178"/>
         <Label Content="Goods List:" HorizontalAlignment="Left" Margin="10,18,0,0" VerticalAlignment="Top" Width="178"/>
         <Label Content="Total Cost:" HorizontalAlignment="Left" Margin="375,360,0,0" VerticalAlignment="Top" Width="104"/>
         <Label Content="{Binding TotalCost}" HorizontalAlignment="Left" Margin="479,360,0,0" VerticalAlignment="Top" Width="88" Height="26"/>
+        <Button Content="Fill Bucket" HorizontalAlignment="Left" Margin="211,345,0,0" VerticalAlignment="Top" Width="76" Click="Button_Click"/>
+        <Label HorizontalAlignment="Left" Margin="44,366,0,0" VerticalAlignment="Top"/>
+        <Label Content="Fill bucket with 25kk goods:" HorizontalAlignment="Left" Margin="46,342,0,0" VerticalAlignment="Top" Width="160"/>
 
     </Grid>
 </Window>
