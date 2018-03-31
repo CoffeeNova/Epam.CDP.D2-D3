@@ -9,9 +9,6 @@ namespace IQueryable._01
     {
         private StringBuilder _resultString;
         private const string Where = nameof(Where);
-        private const string StartsWith = nameof(StartsWith);
-        private const string EndsWith = nameof(EndsWith);
-        private const string Contains = nameof(Contains);
 
         public string Translate(Expression exp)
         {
@@ -35,14 +32,14 @@ namespace IQueryable._01
             //  При этом в LINQ-нотации они должны выглядеть как обращение к методам класса string: StartsWith, EndsWith, Contains
             if (node.Method.DeclaringType == typeof(string))
             {
-                var argument = (ConstantExpression)node.Arguments[0];
+                if (node.Method.Name == Enum.GetName(typeof(Search), Search.StartsWith))
+                    _constantModifier = Search.StartsWith;
 
-                if (node.Method.Name == StartsWith)
-                    Visit(Expression.Constant($"{argument.Value }*"));
-                else if (node.Method.Name == EndsWith)
-                    Visit(Expression.Constant($"*{argument.Value }"));
-                else if (node.Method.Name == Contains)
-                    Visit(Expression.Constant($"*{argument.Value }*"));
+                else if (node.Method.Name == Enum.GetName(typeof(Search), Search.EndsWith))
+                    _constantModifier = Search.EndsWith;
+
+                else if (node.Method.Name == Enum.GetName(typeof(Search), Search.Contains))
+                    _constantModifier = Search.Contains;
             }
 
             return base.VisitMethodCall(node);
@@ -67,6 +64,9 @@ namespace IQueryable._01
                         VisitAndBuild(node.Right, node.Left);
 
                     break;
+                case ExpressionType.And:
+                    VisitAnd(node);
+                    break;
 
                 default:
                     throw new NotSupportedException($"Operation {node.NodeType} is not supported");
@@ -83,6 +83,16 @@ namespace IQueryable._01
             _resultString.Append(")");
         }
 
+        private void VisitAnd(BinaryExpression exp)
+        {
+            _resultString.Append("[{");
+            Visit(exp.Left);
+            _resultString.Append("},{");
+            Visit(exp.Right);
+            _resultString.Append("}]");
+
+        }
+
         protected override Expression VisitMember(MemberExpression node)
         {
             _resultString.Append(node.Member.Name).Append(":");
@@ -92,9 +102,23 @@ namespace IQueryable._01
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
+            if(_constantModifier == Search.EndsWith || _constantModifier == Search.Contains)
+                _resultString.Append("*");
             _resultString.Append(node.Value);
+            if (_constantModifier == Search.StartsWith || _constantModifier == Search.Contains)
+                _resultString.Append("*");
 
             return node;
+        }
+
+        private Search _constantModifier = Search.Nope;
+
+        private enum Search
+        {
+            Nope,
+            EndsWith,
+            StartsWith,
+            Contains
         }
     }
 }

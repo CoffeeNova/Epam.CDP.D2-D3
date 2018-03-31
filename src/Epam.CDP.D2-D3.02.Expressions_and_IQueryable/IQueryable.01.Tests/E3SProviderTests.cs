@@ -113,7 +113,7 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.Workstation.Contains("IZHW006"));
+            var query = employees.Where(e => e.Workstation.Contains("IZHW006")); 
 
             //Act
             var employee = query.FirstOrDefault();
@@ -128,7 +128,7 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.Workstation.Contains("IZHW006"));
+            var query = employees.Where(e => e.Workstation == "EPRUIZHW0249" & e.NativeName == "");
 
             //Act
             var employee = query.FirstOrDefault();
