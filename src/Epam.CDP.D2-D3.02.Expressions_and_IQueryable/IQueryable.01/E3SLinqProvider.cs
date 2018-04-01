@@ -37,7 +37,7 @@ namespace IQueryable._01
             var translator = new ExpressionToFtsRequestTranslator();
             var queryString = translator.Translate(expression);
 
-            return (TResult) (_e3SClient.SearchFts(itemType, queryString));
+            return (TResult) (_e3SClient.SearchFTS(itemType, queryString));
         }
     }
 }

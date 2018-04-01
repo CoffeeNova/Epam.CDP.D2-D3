@@ -1,5 +1,9 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace IQueryable._01.E3SClient
 {
@@ -22,18 +26,17 @@ namespace IQueryable._01.E3SClient
 
 	public enum SortOrder
 	{
-		Ascending = 1,
-		Descending = -1
+		ASCending = 1,
+		DESCending = -1
 	}
 
 	[JsonDictionary]
 	public class SortingCollection : Dictionary<string, SortOrder> { }
 
 	[JsonObject]
-	public class FtsQueryRequest
+	public class FTSQueryRequest
 	{
-	    // ReSharper disable once EmptyConstructor
-		public FtsQueryRequest()
+		public FTSQueryRequest()
 		{
 			//Statements = new List<Statement>();
 			//Filters = new List<Filter>();

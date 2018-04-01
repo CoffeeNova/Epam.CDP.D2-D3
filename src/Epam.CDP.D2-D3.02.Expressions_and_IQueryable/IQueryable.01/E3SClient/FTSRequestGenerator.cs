@@ -1,21 +1,24 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace IQueryable._01.E3SClient
 {
-	public class FtsRequestGenerator
+	public class FTSRequestGenerator
 	{
-		private readonly UriTemplate _ftsSearchTemplate = new UriTemplate(@"data/searchFts?metaType={metaType}&query={query}&fields={fields}");
-		private readonly Uri _baseAddress;
+		private readonly UriTemplate FTSSearchTemplate = new UriTemplate(@"data/searchFts?metaType={metaType}&query={query}&fields={fields}");
+		private readonly Uri BaseAddress;
 
-		public FtsRequestGenerator(string baseAddres) : this(new Uri(baseAddres))
+		public FTSRequestGenerator(string baseAddres) : this(new Uri(baseAddres))
 		{
 		}
 
-		public FtsRequestGenerator(Uri baseAddress)
+		public FTSRequestGenerator(Uri baseAddress)
 		{
-			_baseAddress = baseAddress;
+			BaseAddress = baseAddress;
 		}
 
 		public Uri GenerateRequestUrl<T>(string query = "*", int start = 0, int limit = 10)
@@ -27,7 +30,7 @@ namespace IQueryable._01.E3SClient
 		{
 			string metaTypeName = GetMetaTypeName(type);
 
-			var ftsQueryRequest = new FtsQueryRequest
+			var ftsQueryRequest = new FTSQueryRequest
 			{
 				Statements = new List<Statement>
 				{
@@ -41,8 +44,8 @@ namespace IQueryable._01.E3SClient
 
 			var ftsQueryRequestString = JsonConvert.SerializeObject(ftsQueryRequest);
 
-			var uri = _ftsSearchTemplate.BindByName(_baseAddress,
-				new Dictionary<string, string>
+			var uri = FTSSearchTemplate.BindByName(BaseAddress,
+				new Dictionary<string, string>()
 				{
 					{ "metaType", metaTypeName },
 					{ "query", ftsQueryRequestString }
@@ -56,9 +59,10 @@ namespace IQueryable._01.E3SClient
 			var attributes = type.GetCustomAttributes(typeof(E3SMetaTypeAttribute), false);
 
 			if (attributes.Length == 0)
-				throw new Exception($"Entity {type.FullName} do not have attribute E3SMetaType");
+				throw new Exception(string.Format("Entity {0} do not have attribute E3SMetaType", type.FullName));
 
 			return ((E3SMetaTypeAttribute)attributes[0]).Name;
 		}
+
 	}
 }

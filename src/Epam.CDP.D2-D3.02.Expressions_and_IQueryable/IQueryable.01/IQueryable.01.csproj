@@ -48,9 +48,6 @@
     <Compile Include="E3SClient\E3SMetaTypeAttribute.cs" />
     <Compile Include="E3SClient\E3SQueryClient.cs" />
     <Compile Include="E3SClient\Entities\EmployeeEntity.cs" />
-    <Compile Include="E3SClient\Entities\Recognition.cs" />
-    <Compile Include="E3SClient\Entities\Skills.cs" />
-    <Compile Include="E3SClient\Entities\WorkHistory.cs" />
     <Compile Include="E3SClient\FTSQueryRequest.cs" />
     <Compile Include="E3SClient\FTSRequestGenerator.cs" />
     <Compile Include="E3SClient\FTSResponse.cs" />

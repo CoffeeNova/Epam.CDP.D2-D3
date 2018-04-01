@@ -1,21 +1,21 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace IQueryable._01.E3SClient
 {
 	public class Item<T>
 	{
-	    [JsonProperty("data")]
-        public T Data { get; set; }
+		public T data { get; set; }
 
 	}
 
-	public class FtsResponse<T> where T : class
+	public class FTSResponse<T> where T : class
 	{
-        [JsonProperty("total")]
-		public int Total { get; set; }
+		public int total { get; set; }
 
-	    [JsonProperty("items")]
-        public List<Item<T>> Items { get; set; }
+		public List<Item<T>> items { get; set; }
 	}
 }
