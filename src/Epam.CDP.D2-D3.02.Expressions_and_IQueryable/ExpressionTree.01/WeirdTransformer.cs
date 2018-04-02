@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace ExpressionTree._01
 {
-    public class Weirdransformer : ExpressionVisitor
+    public class WeirdTransformer : ExpressionVisitor
     {
         protected override Expression VisitBinary(BinaryExpression node)
         {
@@ -29,8 +29,9 @@ namespace ExpressionTree._01
             var constant = node.Right.NodeType == ExpressionType.Constant
                 ? (ConstantExpression)node.Right
                 : null;
+            
 
-            if (parameter == null || constant == null)
+            if (parameter == null || constant == null || constant.Value is int == false || (int)constant.Value != 1)
                 return base.VisitBinary(node);
 
             var changedPar = VisitParameter(parameter);
@@ -57,10 +58,7 @@ namespace ExpressionTree._01
             if (node.NodeType != ExpressionType.Lambda)
                 return base.VisitLambda(node);
 
-            var parameters = node.Parameters.Where(p => _parametersToChange.ContainsKey(p.Name));
-
-
-            return Expression.Lambda(Visit(node.Body), parameters);
+            return Expression.Lambda(Visit(node.Body), node.Parameters);
         }
 
         protected override Expression VisitParameter(ParameterExpression node)

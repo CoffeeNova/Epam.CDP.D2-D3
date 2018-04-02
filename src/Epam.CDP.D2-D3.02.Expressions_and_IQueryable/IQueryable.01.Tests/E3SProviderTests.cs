@@ -21,7 +21,7 @@ namespace IQueryable._01.Tests
         public void WithoutProvider()
         {
             var client = new E3SQueryClient(User, Password);
-            var res = client.SearchFTS<EmployeeEntity>("workstation:(EPRUIZHW0249)", 0, 1);
+            var res = client.SearchFTS<EmployeeEntity>(0, 1, "workstation:(EPBYBREW0165)");
 
             foreach (var emp in res)
                 Console.WriteLine($"{emp.nativeName} {emp.shortStartWorkDate}");
@@ -31,7 +31,7 @@ namespace IQueryable._01.Tests
         public void WithoutProviderNonGeneric()
         {
             var client = new E3SQueryClient(User, Password);
-            var res = client.SearchFTS(typeof(EmployeeEntity), "workstation:(EPRUIZHW0249)", 0, 10);
+            var res = client.SearchFTS(typeof(EmployeeEntity), 0, 10, "workstation:(EPBYBREW0165)");
 
             foreach (var emp in res.OfType<EmployeeEntity>())
                 Console.WriteLine($"{emp.nativeName} {emp.shortStartWorkDate}");
@@ -43,7 +43,7 @@ namespace IQueryable._01.Tests
         {
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
 
-            foreach (var emp in employees.Where(e => e.workStation == "EPRUIZHW0249"))
+            foreach (var emp in employees.Where(e => e.workStation == "EPBYBREW0165"))
                 Console.WriteLine($"{emp.nativeName} {emp.shortStartWorkDate}");
         }
 
@@ -52,14 +52,14 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.workStation == "EPRUIZHW0249");
+            var query = employees.Where(e => e.workStation == "EPBYBREW0165");
 
             //Act
-            var employee = query.FirstOrDefault();
+            var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("", employee?.nativeName);
-            Assert.AreEqual("", employee?.shortStartWorkDate);
+            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
+            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -67,14 +67,14 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => "EPRUIZHW0249" == e.workStation);
+            var query = employees.Where(e => "EPBYBREW0165" == e.workStation);
 
             //Act
-            var employee = query.FirstOrDefault();
+            var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("", employee?.nativeName);
-            Assert.AreEqual("", employee?.shortStartWorkDate);
+            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
+            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -82,14 +82,14 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.workStation.StartsWith("EPRUIZHW006"));
+            var query = employees.Where(e => e.workStation.StartsWith("EPBYBREW016"));
 
             //Act
-            var employee = query.FirstOrDefault();
+            var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("", employee?.nativeName);
-            Assert.AreEqual("", employee?.shortStartWorkDate);
+            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.nativeName);
+            Assert.AreEqual("2000-08-01", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -97,14 +97,14 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.workStation.EndsWith("IZHW0060"));
+            var query = employees.Where(e => e.workStation.EndsWith("BYBREW0165"));
 
             //Act
-            var employee = query.FirstOrDefault();
+            var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("", employee?.nativeName);
-            Assert.AreEqual("", employee?.shortStartWorkDate);
+            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
+            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -112,14 +112,14 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.workStation.Contains("IZHW006")); 
+            var query = employees.Where(e => e.workStation.Contains("BYBREW016"));
 
             //Act
-            var employee = query.FirstOrDefault();
+            var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("", employee?.nativeName);
-            Assert.AreEqual("", employee?.shortStartWorkDate);
+            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.nativeName);
+            Assert.AreEqual("2000-08-01", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -127,14 +127,14 @@ namespace IQueryable._01.Tests
         {
             //Arrange
             var employees = new E3SEntitySet<EmployeeEntity>(User, Password);
-            var query = employees.Where(e => e.workStation == "EPRUIZHW0249" & e.nativeName == "");
+            var query = employees.Where(e => e.workStation == "EPBYBREW0165" && e.citySum == "Brest");
 
             //Act
-            var employee = query.FirstOrDefault();
+            var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("", employee?.nativeName);
-            Assert.AreEqual("", employee?.shortStartWorkDate);
+            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
+            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
         }
     }
 }

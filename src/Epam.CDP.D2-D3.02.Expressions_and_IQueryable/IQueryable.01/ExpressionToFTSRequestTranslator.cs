@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using IQueryable._01.E3SClient;
 
 namespace IQueryable._01
 {
@@ -65,6 +66,7 @@ namespace IQueryable._01
 
                     break;
                 case ExpressionType.And:
+                case ExpressionType.AndAlso:
                     VisitAnd(node);
                     break;
 
@@ -85,12 +87,9 @@ namespace IQueryable._01
 
         private void VisitAnd(BinaryExpression exp)
         {
-            _resultString.Append("[{");
             Visit(exp.Left);
-            _resultString.Append("},{");
+            _resultString.Append(Constants.QUERY_AND_DELIMITER);
             Visit(exp.Right);
-            _resultString.Append("}]");
-
         }
 
         protected override Expression VisitMember(MemberExpression node)
@@ -102,7 +101,7 @@ namespace IQueryable._01
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            if(_constantModifier == Search.EndsWith || _constantModifier == Search.Contains)
+            if (_constantModifier == Search.EndsWith || _constantModifier == Search.Contains)
                 _resultString.Append("*");
             _resultString.Append(node.Value);
             if (_constantModifier == Search.StartsWith || _constantModifier == Search.Contains)

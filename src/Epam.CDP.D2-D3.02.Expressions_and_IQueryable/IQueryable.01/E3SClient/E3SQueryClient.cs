@@ -23,12 +23,12 @@ namespace IQueryable._01.E3SClient
 			Password = password;
 		}
 
-		public IEnumerable<T> SearchFTS<T>(string query, int start = 0, int limit = 0) where T : E3SEntity
+		public IEnumerable<T> SearchFTS<T>(int start = 0, int limit = 0, params string[] query) where T : E3SEntity
 		{
 			HttpClient client = CreateClient();
 			var requestGenerator = new FTSRequestGenerator(BaseAddress);
 
-			Uri request = requestGenerator.GenerateRequestUrl<T>(query, start, limit);
+			Uri request = requestGenerator.GenerateRequestUrl<T>(start, limit, query);
 
 			var resultString = client.GetStringAsync(request).Result;
 
@@ -36,12 +36,12 @@ namespace IQueryable._01.E3SClient
 		}
 
 
-		public IEnumerable SearchFTS(Type type, string query, int start = 0, int limit = 0)
+		public IEnumerable SearchFTS(Type type, int start = 0, int limit = 0, params string[] query)
 		{
 			HttpClient client = CreateClient();
 			var requestGenerator = new FTSRequestGenerator(BaseAddress);
 
-			Uri request = requestGenerator.GenerateRequestUrl(type, query, start, limit);
+			Uri request = requestGenerator.GenerateRequestUrl(type, start, limit, query);
 
 			var resultString = client.GetStringAsync(request).Result;
 			var endType = typeof(FTSResponse<>).MakeGenericType(type);

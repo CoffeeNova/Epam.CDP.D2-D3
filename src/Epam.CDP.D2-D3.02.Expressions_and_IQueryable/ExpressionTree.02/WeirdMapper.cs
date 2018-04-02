@@ -21,10 +21,10 @@ namespace ExpressionTree._02
         public TDestination Map<TSource, TDestination>(TSource source)
         {
             var mapperRule = new KeyValuePair<Type, Type>(typeof(TSource), typeof(TDestination));
-            if (!(_maps[mapperRule] is Expression<Func<TSource, TDestination>> expression))
+            if(!_maps.TryGetValue(mapperRule, out var expression) &&  expression == null)
                 throw new WeirdMapperException();
 
-            return expression.Compile()(source);
+            return ((Expression<Func<TSource, TDestination>>)expression).Compile()(source);
         }
 
         private Expression<Func<TSource, TDestination>> BuildMapFunction<TSource, TDestination>()
@@ -32,8 +32,10 @@ namespace ExpressionTree._02
             var sourceParam = Expression.Parameter(typeof(TSource));
             var sourceMembers = typeof(TSource).GetMembers(BindingFlags.Instance | BindingFlags.Public).Where(x => x is PropertyInfo || x is FieldInfo);
             var destMembers = typeof(TDestination).GetMembers(BindingFlags.Instance | BindingFlags.Public).Where(x => x is PropertyInfo || x is FieldInfo);
+            var suitableMembers = ExcludeIneligibleMembers(destMembers);
+
             var joined = sourceMembers
-                .Join(destMembers, x => x.Name, y => y.Name, (x, y) => new { Source = x, Dest = y });
+                .Join(suitableMembers, x => x.Name, y => y.Name, (x, y) => new { Source = x, Dest = y });
             var members = joined
                 .Select(x => Expression.Bind(x.Dest, Expression.PropertyOrField(sourceParam, x.Source.Name)));
 
@@ -43,6 +45,27 @@ namespace ExpressionTree._02
                 body,
                 sourceParam
             );
+        }
+
+        private IEnumerable<MemberInfo> ExcludeIneligibleMembers(IEnumerable<MemberInfo> members)
+        {
+            foreach (var m in members)
+            {
+                switch (m.MemberType)
+                {
+                    case MemberTypes.Field:
+                        var f = (FieldInfo) m;
+                        if (!f.IsInitOnly)
+                            yield return m;
+                        break;
+
+                    case MemberTypes.Property:
+                        var p = (PropertyInfo)m;
+                        if(p.CanWrite && p.GetSetMethod() != null)
+                            yield return m;
+                        break;
+                }
+            }
         }
 
         private readonly IDictionary<KeyValuePair<Type, Type>, Expression> _maps =
