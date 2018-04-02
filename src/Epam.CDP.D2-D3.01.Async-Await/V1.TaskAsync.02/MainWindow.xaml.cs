@@ -57,7 +57,7 @@ namespace V1.TaskAsync._02
                 try
                 {
                     client.DownloadProgressChanged += (sender, e) => DownloadProgressChanged(e, item);
-                    client.DownloadStringCompleted += async (sender, e) => await Client_DownloadStringCompleted(item);
+                    client.DownloadDataCompleted += async (sender, e) => await Client_DownloadStringCompleted(item);
                     item.DownloadStatus = DownloadStatus.Downloading;
                     return await client.DownloadDataTaskAsync(item.Url);
                 }
@@ -84,10 +84,10 @@ namespace V1.TaskAsync._02
 
         private void DownloadButton_Click(object sender, RoutedEventArgs e)
         {
-            StatrDownload();
+            StartDownload();
         }
 
-        private void StatrDownload()
+        private void StartDownload()
         {
             if (!ItemList.Any())
                 return;
@@ -126,8 +126,6 @@ namespace V1.TaskAsync._02
                 var sp = ServicePointManager.FindServicePoint(new Uri(i.Url));
                 sp.ConnectionLimit = newValue;
             }
-
-            StatrDownload();
         }
     }
 }
