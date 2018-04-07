@@ -73,8 +73,9 @@ namespace IQueryable._01.Tests
             var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
-            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
+            var actual = employee.FirstOrDefault(x => string.Equals("EPBYBREW0165", x.workStation));
+            Assert.AreEqual("Игорь Салженицин", actual?.nativeName);
+            Assert.AreEqual("2000-08-01", actual?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -88,8 +89,9 @@ namespace IQueryable._01.Tests
             var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.nativeName);
-            Assert.AreEqual("2000-08-01", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.shortStartWorkDate);
+            var actual = employee.FirstOrDefault(x => string.Equals("EPBYBREW0165", x.workStation));
+            Assert.AreEqual("Игорь Салженицин", actual?.nativeName);
+            Assert.AreEqual("2000-08-01", actual?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -103,8 +105,9 @@ namespace IQueryable._01.Tests
             var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
-            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
+            var actual = employee.FirstOrDefault(x => string.Equals("EPBYBREW0165", x.workStation));
+            Assert.AreEqual("Игорь Салженицин", actual?.nativeName);
+            Assert.AreEqual("2000-08-01", actual?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -118,8 +121,9 @@ namespace IQueryable._01.Tests
             var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.nativeName);
-            Assert.AreEqual("2000-08-01", employee.FirstOrDefault(x => x.workStation == "EPBYBREW0165")?.shortStartWorkDate);
+            var actual = employee.FirstOrDefault(x => string.Equals("EPBYBREW0165", x.workStation));
+            Assert.AreEqual("Игорь Салженицин", actual?.nativeName);
+            Assert.AreEqual("2000-08-01", actual?.shortStartWorkDate);
         }
 
         [TestMethod]
@@ -133,8 +137,9 @@ namespace IQueryable._01.Tests
             var employee = query.ToList();
 
             //Assert
-            Assert.AreEqual("Игорь Салженицин", employee.FirstOrDefault()?.nativeName);
-            Assert.AreEqual("2000-08-01", employee.FirstOrDefault()?.shortStartWorkDate);
+            var actual = employee.FirstOrDefault(x => string.Equals("EPBYBREW0165", x.workStation));
+            Assert.AreEqual("Игорь Салженицин", actual?.nativeName);
+            Assert.AreEqual("2000-08-01", actual?.shortStartWorkDate);
         }
     }
 }
