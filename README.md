@@ -13,3 +13,10 @@ in Q&A video part. Imho, it should be enough. Or not?
 
 about Task #1 IQueryable part: It seems that the task is outdated, requests are not executed as expected, but I tried to do my best
 and completed this part. 
+
+03. Interoperating with Unmanaged Code
+
+u can find reg.cmd and unreg.cmd files to (un)register PowerStateManagement.dll library with RegAsm.exe .
+also there is "Tests" folder with some js and vbs tests files for Task#3.
+
+I have some issues with methods GetLastSleepTime() and GetLastWakeTime() - returned values are identical. Could you explain me what I'm doing wrong?
