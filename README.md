@@ -20,3 +20,21 @@ u can find reg.cmd and unreg.cmd files to (un)register PowerStateManagement.dll 
 also there is "Tests" folder with some js and vbs tests files for Task#3.
 
 ReserveHibernationFile.js and RemoveHibernationFile.js test files should run as administrator if your cuurent user have no privileges to work with hiberfil.sys file.
+
+04. Windows Services
+
+Solution folder contains install.cmd and uninstall.cmd which are intended for installation/deinstallation FileFormatterService.
+Please build solution in Release mode before installation service.
+we can install service with several parameters:
+
+-path: contains paths to monitoring folders which will receive new pictures. Should be delimited by ';' symbol;
+
+-output: directory path for formatted files;
+
+-damaged: if there will be a broken image file, all batch of images should moved to this folder;
+
+-timeout: timeout in ms, signal to start formate a new file;
+
+-filetype: type of output file, only .pdf supported for this moment;
+
+-attempt: attempt count to read image files before throw exception.
