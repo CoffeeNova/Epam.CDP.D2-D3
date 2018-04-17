@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PowerStateManagement;
 
 namespace PowerStateManagementTests
 {
@@ -63,6 +64,18 @@ namespace PowerStateManagementTests
         public void SetHibernateStateTest()
         {
             //_psMgmt.SetSuspendState(PowerState.Hibernate);
+        }
+
+        [TestMethod()]
+        public void RemoveHibernationFileTest()
+        {
+            _psMgmt.ReserveHibernationFile(HiberFileAction.Remove);
+        }
+
+        [TestMethod()]
+        public void ReserveHibernationFileTest()
+        {
+            _psMgmt.ReserveHibernationFile(HiberFileAction.Reserve);
         }
     }
 }

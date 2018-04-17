@@ -1,4 +1,5 @@
 ﻿using System;
+using Common;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -11,61 +12,25 @@ namespace PowerStateManagement
     {
         public DateTime GetLastSleepTime()
         {
-            IntPtr status = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(ulong)));
-            var retval = GetPowerInformation(InformationLevel.LastSleepTime, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(typeof(ulong)));
-            if (retval != 0)
-            {
-                Marshal.FreeCoTaskMem(status);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-            var sleepTime = Marshal.ReadInt64(status);
-            Marshal.FreeCoTaskMem(status);
-
-            return DateTime.FromFileTime(GetLastBootupTime().ToFileTime() + sleepTime);
+            var sleepTime = GetPowerInformation<ulong>(InformationLevel.LastSleepTime);
+            return DateTime.FromFileTime(GetLastBootupTime().ToFileTime() + (long)sleepTime);
         }
 
         public DateTime GetLastWakeTime()
         {
-            IntPtr status = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(ulong)));
-            var retval = GetPowerInformation(InformationLevel.LastWakeTime, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(typeof(ulong)));
-            if (retval != 0)
-            {
-                Marshal.FreeCoTaskMem(status);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-            var wakeTime = Marshal.ReadInt64(status);
-            Marshal.FreeCoTaskMem(status);
-
-            return DateTime.FromFileTime(GetLastBootupTime().ToFileTime() + wakeTime);
+            var wakeTime = GetPowerInformation<ulong>(InformationLevel.LastWakeTime);
+            return DateTime.FromFileTime(GetLastBootupTime().ToFileTime() + (long)wakeTime);
         }
 
         public BatteryState GetSystemBatteryState()
         {
-            IntPtr status = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(SystemBatteryState)));
-            var retval = GetPowerInformation(InformationLevel.SystemBatteryState, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(typeof(SystemBatteryState)));
-            if (retval != 0)
-            {
-                Marshal.FreeCoTaskMem(status);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-            var batteryState = (SystemBatteryState)Marshal.PtrToStructure(status, typeof(SystemBatteryState));
-            Marshal.FreeCoTaskMem(status);
-
+            var batteryState = GetPowerInformation<SystemBatteryState>(InformationLevel.SystemBatteryState);
             return new BatteryState(batteryState);
         }
 
         public PowerInformation GetSystemPowerInformation()
         {
-            IntPtr status = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(SystemPowerInformation)));
-            var retval = GetPowerInformation(InformationLevel.SystemPowerInformation, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(typeof(SystemPowerInformation)));
-            if (retval != 0)
-            {
-                Marshal.FreeCoTaskMem(status);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-            var powerInformation = (SystemPowerInformation)Marshal.PtrToStructure(status, typeof(SystemPowerInformation));
-            Marshal.FreeCoTaskMem(status);
-
+            var powerInformation = GetPowerInformation<SystemPowerInformation>(InformationLevel.SystemPowerInformation);
             return new PowerInformation(powerInformation);
         }
 
@@ -80,6 +45,40 @@ namespace PowerStateManagement
                 var lastError = Marshal.GetLastWin32Error();
                 throw new Win32Exception(lastError);
             }
+        }
+
+        public void ReserveHibernationFile(HiberFileAction action)
+        {
+            var inp = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(int)));
+            Marshal.WriteInt32(inp, 0, (int)action);
+            var retval = GetPowerInformation(InformationLevel.SystemReserveHiberFile, inp, (UInt32)Marshal.SizeOf(typeof(int)), (IntPtr)null, 0);
+            if (retval != 0)
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+
+            Marshal.FreeCoTaskMem(inp);
+        }
+
+        private T GetPowerInformation<T>(InformationLevel level)
+        {
+            var type = typeof(T);
+            var status = Marshal.AllocCoTaskMem(Marshal.SizeOf(type));
+            var retval = GetPowerInformation(level, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(type));
+            if (retval != 0)
+            {
+                Marshal.FreeCoTaskMem(status);
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+
+            T returnedValue = default(T);
+            if (type == typeof(ulong))
+                returnedValue = (T)Convert.ChangeType(Marshal.ReadInt64(status), type);
+
+            else if (type.IsStruct())
+                returnedValue = (T)Marshal.PtrToStructure(status, type);
+
+            Marshal.FreeCoTaskMem(status);
+
+            return returnedValue;
         }
 
         private DateTime GetLastBootupTime()

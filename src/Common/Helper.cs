@@ -32,5 +32,10 @@ namespace Common
 
             return input;
         }
+
+        public static bool IsStruct(this Type source)
+        {
+            return source.IsValueType && !source.IsPrimitive && !source.IsEnum;
+        }
     }
 }

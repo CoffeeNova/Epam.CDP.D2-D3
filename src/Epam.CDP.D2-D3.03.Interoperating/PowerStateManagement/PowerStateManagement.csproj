@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HiberFileAction.cs" />
     <Compile Include="IBatteryState.cs" />
     <Compile Include="InformationLevel.cs" />
     <Compile Include="IPowerInformation.cs" />
@@ -50,6 +51,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SystemBatteryState.cs" />
     <Compile Include="SystemPowerInformation.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Common.csproj">
+      <Project>{2df5384d-dd7d-401a-806b-664a90ec3a8f}</Project>
+      <Name>Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

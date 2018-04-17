@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerStateManagement", "Pow
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerStateManagementTests", "PowerStateManagementTests\PowerStateManagementTests.csproj", "{D3B2308C-A5CE-4019-9042-850791B13F27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "..\Common\Common.csproj", "{2DF5384D-DD7D-401A-806B-664A90EC3A8F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D3B2308C-A5CE-4019-9042-850791B13F27}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3B2308C-A5CE-4019-9042-850791B13F27}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3B2308C-A5CE-4019-9042-850791B13F27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DF5384D-DD7D-401A-806B-664A90EC3A8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DF5384D-DD7D-401A-806B-664A90EC3A8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DF5384D-DD7D-401A-806B-664A90EC3A8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DF5384D-DD7D-401A-806B-664A90EC3A8F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -13,5 +13,6 @@ namespace PowerStateManagement
         BatteryState GetSystemBatteryState();
         PowerInformation GetSystemPowerInformation();
         void SetSuspendState(PowerState powerState);
+        void ReserveHibernationFile(HiberFileAction action);
     }
 }
