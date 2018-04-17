@@ -19,4 +19,4 @@ and completed this part.
 u can find reg.cmd and unreg.cmd files to (un)register PowerStateManagement.dll library with RegAsm.exe .
 also there is "Tests" folder with some js and vbs tests files for Task#3.
 
-I have some issues with methods GetLastSleepTime() and GetLastWakeTime() - returned values are identical. Could you explain me what I'm doing wrong?
+ReserveHibernationFile.js and RemoveHibernationFile.js test files should run as administrator if your cuurent user have no privileges to work with hiberfil.sys file.
