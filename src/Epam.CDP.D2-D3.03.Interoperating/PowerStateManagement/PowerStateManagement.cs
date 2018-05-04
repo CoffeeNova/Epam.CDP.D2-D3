@@ -51,32 +51,42 @@ namespace PowerStateManagement
         {
             var inp = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(int)));
             Marshal.WriteInt32(inp, 0, (int)action);
-            var retval = GetPowerInformation(InformationLevel.SystemReserveHiberFile, inp, (UInt32)Marshal.SizeOf(typeof(int)), (IntPtr)null, 0);
-            if (retval != 0)
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            Marshal.FreeCoTaskMem(inp);
+            try
+            {
+                var retval = GetPowerInformation(InformationLevel.SystemReserveHiberFile, inp, (UInt32)Marshal.SizeOf(typeof(int)), (IntPtr)null, 0);
+                if (retval != 0)
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            finally
+            {
+                Marshal.FreeCoTaskMem(inp);
+            }
         }
 
         private T GetPowerInformation<T>(InformationLevel level)
         {
             var type = typeof(T);
+            T returnedValue = default(T);
             var status = Marshal.AllocCoTaskMem(Marshal.SizeOf(type));
-            var retval = GetPowerInformation(level, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(type));
-            if (retval != 0)
+            try
+            {
+                var retval = GetPowerInformation(level, (IntPtr)null, 0, status, (UInt32)Marshal.SizeOf(type));
+                if (retval != 0)
+                {
+                    Marshal.FreeCoTaskMem(status);
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                }
+
+                if (type == typeof(ulong))
+                    returnedValue = (T)Convert.ChangeType(Marshal.ReadInt64(status), type);
+
+                else if (type.IsStruct())
+                    returnedValue = (T)Marshal.PtrToStructure(status, type);
+            }
+            finally
             {
                 Marshal.FreeCoTaskMem(status);
-                throw new Win32Exception(Marshal.GetLastWin32Error());
             }
-
-            T returnedValue = default(T);
-            if (type == typeof(ulong))
-                returnedValue = (T)Convert.ChangeType(Marshal.ReadInt64(status), type);
-
-            else if (type.IsStruct())
-                returnedValue = (T)Marshal.PtrToStructure(status, type);
-
-            Marshal.FreeCoTaskMem(status);
 
             return returnedValue;
         }
