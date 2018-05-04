@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using Common;
 
 namespace FileFormatterService
 {
@@ -30,8 +31,7 @@ namespace FileFormatterService
                 return;
 
             CheckDirectoriesForNewData();
-            _imageWatcher = new ImageWatcher(MonitoringPaths, NewPageTimeOut);
-            _imageWatcher.EndOfFileEventDetected += _imageWatcher_EndOfFileEventDetected;
+            ImageWatcherHelper.CreateImageWatcher(out _imageWatcher, ImageExtensions.ToList(), MonitoringPaths, NewPageTimeOut, _imageWatcher_EndOfFileEventDetected);
             _state = ServiceState.Started;
         }
 
@@ -40,8 +40,7 @@ namespace FileFormatterService
             if (_state == ServiceState.Stopped)
                 return;
 
-            _imageWatcher.EndOfFileEventDetected -= _imageWatcher_EndOfFileEventDetected;
-            _imageWatcher.Dispose();
+            ImageWatcherHelper.DisposeImageWatcher(ref _imageWatcher, _imageWatcher_EndOfFileEventDetected);
             _state = ServiceState.Stopped;
         }
 
@@ -58,15 +57,22 @@ namespace FileFormatterService
                 }
 
                 var dir = new DirectoryInfo(path);
-                var files = dir.GetFiles();
+                var files = dir.GetFilesByExtensions(ImageExtensions);
                 imagesPath.AddRange(files.Select(x => x.FullName));
             }
 
             if (imagesPath.Any())
             {
                 var imgArr = imagesPath.ToArray();
-                BuildFile(imgArr);
-                CleanFiles(imgArr);
+                try
+                {
+                    BuildFile(imgArr);
+                    CleanFiles(imgArr);
+                }
+                catch (InvalidOperationException)
+                {
+                    TryMoveFilesToDamagedFolder(imagesPath);
+                }
             }
         }
 
@@ -76,25 +82,23 @@ namespace FileFormatterService
                 return;
 
             var fileBuilder = FileBuilderFactory.GetFileBuilder(FileType, OutputPath, imagesPaths);
-            fileBuilder.FileName = Path.GetFileNameWithoutExtension(imagesPaths.First())?.Split('_').First();
+            var fileName = Path.GetFileNameWithoutExtension(imagesPaths.First())?.Split('_').First();
 
             int attempt = AttemptCount;
             while (attempt > 0)
             {
                 try
                 {
-                    fileBuilder.Build();
+                    fileBuilder.Build(fileName);
                     attempt = 0;
                 }
                 catch (Exception)
                 {
+                    if (attempt == 0)
+                        throw new InvalidOperationException();
+
                     attempt--;
                     Thread.Sleep(2000);
-                }
-                finally
-                {
-                    if (attempt == 0)
-                        TryMoveFilesToDamagedFolder(imagesPaths);
                 }
             }
         }
@@ -109,7 +113,7 @@ namespace FileFormatterService
             }
         }
 
-        private void TryMoveFilesToDamagedFolder(string[] imagesPaths)
+        private void TryMoveFilesToDamagedFolder(ICollection<string> imagesPaths)
         {
             var subFolderPath = Path.Combine(DamagedPath, DateTime.Now.ToString("dd-MM-yy hh.mm.ss"));
             if (!Directory.Exists(subFolderPath))
@@ -125,17 +129,9 @@ namespace FileFormatterService
                         file.MoveTo(Path.Combine(subFolderPath, file.Name));
                     }
                 }
-                catch (UnauthorizedAccessException ex)
+                catch (Exception)
                 {
-                    var message =
-                        "Can't read source image file: '{imagePath}'. Probably file locked by another process.";
-                    //var eventMessage =
-                    //    message +
-                    //    $"Inner message: {ex.Message}" +
-                    //    $"Stack trace: {ex.StackTrace}";
-
-                    //EventLog.WriteEntry(ServiceHelper.GetServiceName(), eventMessage, EventLogEntryType.Error, 121, 1);
-                    throw new InvalidOperationException(message, ex);
+                    // to log
                 }
             }
         }
@@ -163,5 +159,7 @@ namespace FileFormatterService
             Stopped,
             Started
         }
+
+        private string[] ImageExtensions => new[] { Constants.FileExtension.Jpg, Constants.FileExtension.Png };
     }
 }

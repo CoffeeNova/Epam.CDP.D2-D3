@@ -66,6 +66,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Constants.cs" />
     <Compile Include="FileBuilderFactory.cs" />
     <Compile Include="FileType.cs" />
     <Compile Include="IFileBuilder.cs" />

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace FileFormatterService
 {
@@ -13,5 +14,25 @@ namespace FileFormatterService
             watcher.EnableRaisingEvents = true;
             watcher.Error += onError;
         }
+
+        public static void CreateImageWatcher(out ImageWatcher watcher, ICollection<string> imageExtensions, ICollection<string> monitoringPaths, int newPageTimeout, ImageWatcher.EndOfFileEventHandler endOfFileEventHandler)
+        {
+            watcher = new ImageWatcher(monitoringPaths, newPageTimeout)
+            {
+                ImageExtensions = imageExtensions
+            };
+            watcher.EndOfFileEventDetected += endOfFileEventHandler;
+        }
+
+        public static void DisposeImageWatcher(ref ImageWatcher watcher, ImageWatcher.EndOfFileEventHandler endOfFileEventHandler)
+        {
+            if (watcher == null)
+                return;
+
+            if (endOfFileEventHandler != null)
+                watcher.EndOfFileEventDetected -= endOfFileEventHandler;
+            watcher.Dispose();
+        }
+
     }
 }

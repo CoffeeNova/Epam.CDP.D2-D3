@@ -26,11 +26,12 @@ namespace FileFormatterService
             _imagesPaths = imagesFullNames;
         }
 
-        public void Build()
+        public void Build(string fileName)
         {
-            if (string.IsNullOrEmpty(FileName))
-                throw new InvalidOperationException($"Please set up {FileName} first.");
+            if (string.IsNullOrEmpty(fileName))
+                throw new ArgumentNullException(nameof(fileName));
 
+            FileName = fileName;
             var pdfDocRenderer = new PdfDocumentRenderer(true) { Document = CreateDocument() };
             pdfDocRenderer.RenderDocument();
             var path = Path.Combine(_outputPath, BuildFileName());
@@ -64,6 +65,6 @@ namespace FileFormatterService
 
         public string FileExtension => ".pdf";
 
-        public string FileName { get; set; }
+        public string FileName { get; private set; }
     }
 }

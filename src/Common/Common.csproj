@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Converters\EnumToStringConverter.cs" />
     <Compile Include="DelegateCommand.cs" />
+    <Compile Include="DirectoryInfoExtensions.cs" />
     <Compile Include="EnumerableHelpers.cs" />
     <Compile Include="Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

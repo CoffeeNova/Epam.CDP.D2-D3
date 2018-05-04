@@ -13,6 +13,8 @@ namespace FileFormatterService
         private readonly Timer _timer;
         private readonly List<FileSystemWatcher> _watchers;
 
+        public ICollection<string> ImageExtensions { get; set; }
+
         public ImageWatcher(ICollection<string> monitoringPaths, int newPageTimeout)
         {
             NewPageTimeout = newPageTimeout;
@@ -42,7 +44,7 @@ namespace FileFormatterService
 
         private void Watcher_Created(object sender, FileSystemEventArgs e)
         {
-            if (!ImageFilter(e.Name))
+            if (!ImageExtensions.Any() || !ImageFilter(e.Name))
                 return;
 
             lock (_locker)
@@ -88,7 +90,7 @@ namespace FileFormatterService
             }
         }
 
-        private const string ImageNamePattern = @"\w+_\d+\.(jpg|png)";
+        private string ImageNamePattern => $@"\w+_\d+\.({string.Join("|", ImageExtensions)})";
 
         private bool ImageFilter(string fileName) => Regex.IsMatch(fileName, ImageNamePattern, RegexOptions.IgnoreCase);
         private readonly object _locker = new object();

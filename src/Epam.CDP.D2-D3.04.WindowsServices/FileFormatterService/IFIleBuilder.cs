@@ -2,8 +2,8 @@
 {
     public interface IFileBuilder
     {
-        void Build();
+        void Build(string fileName);
         string FileExtension { get; }
-        string FileName { get; set; }
+        string FileName { get; }
     }
 }
