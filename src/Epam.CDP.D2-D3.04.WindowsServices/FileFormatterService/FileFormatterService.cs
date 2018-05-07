@@ -138,8 +138,15 @@ namespace FileFormatterService
 
         private void _imageWatcher_EndOfFileEventDetected(string[] imagesPaths)
         {
-            BuildFile(imagesPaths);
-            CleanFiles(imagesPaths);
+            try
+            {
+                BuildFile(imagesPaths);
+                CleanFiles(imagesPaths);
+            }
+            catch (InvalidOperationException)
+            {
+                TryMoveFilesToDamagedFolder(imagesPaths);
+            }
         }
 
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();
