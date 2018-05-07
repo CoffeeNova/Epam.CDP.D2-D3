@@ -51,7 +51,7 @@ namespace FileFormatterService
 
         private void CheckDirectoriesForNewData()
         {
-            var imagesPath = new List<string>();
+            var imagesPaths = new List<string>();
             foreach (var path in MonitoringPaths)
             {
                 if (!Directory.Exists(path))
@@ -63,24 +63,24 @@ namespace FileFormatterService
 
                 var dir = new DirectoryInfo(path);
                 var files = dir.GetFilesByExtensions(ImageExtensions);
-                imagesPath.AddRange(files.Select(x => x.FullName));
+                imagesPaths.AddRange(files.Select(x => x.FullName));
             }
 
-            if (imagesPath.Any())
+            if (imagesPaths.Any())
             {
-                var imgArr = imagesPath.ToArray();
+                var imgArr = imagesPaths.ToArray();
                 try
                 {
                     using (var stream = new MemoryStream())
                     {
                         BuildFile(imgArr, stream);
                         SendFileToCentralServer(stream);
-                        CleanFiles(imgArr);
                     }
+                    CleanFiles(imgArr);
                 }
                 catch (InvalidOperationException)
                 {
-                    TryMoveFilesToDamagedFolder(imagesPath);
+                    TryMoveFilesToDamagedFolder(imagesPaths);
                 }
             }
         }
@@ -153,8 +153,19 @@ namespace FileFormatterService
 
         private void _imageWatcher_EndOfFileEventDetected(string[] imagesPaths)
         {
-            BuildFile(imagesPaths);
-            CleanFiles(imagesPaths);
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    BuildFile(imagesPaths, stream);
+                    SendFileToCentralServer(stream);
+                }
+                CleanFiles(imagesPaths);
+            }
+            catch (InvalidOperationException)
+            {
+                TryMoveFilesToDamagedFolder(imagesPaths);
+            }
         }
 
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();

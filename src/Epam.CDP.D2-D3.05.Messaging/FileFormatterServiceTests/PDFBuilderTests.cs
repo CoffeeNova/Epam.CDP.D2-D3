@@ -53,7 +53,10 @@ namespace FileFormatterServiceTests
             var builder = new PDFBuilder(_outputPath, new[] { _imageName });
 
             // Act / Assert
-            builder.Build("img");
+            using (var stream = new MemoryStream())
+            {
+                builder.Build("img", stream);
+            }
         }
     }
 }
