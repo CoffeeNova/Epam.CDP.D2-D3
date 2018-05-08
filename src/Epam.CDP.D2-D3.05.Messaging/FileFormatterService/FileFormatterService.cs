@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Common;
+using FileFormatterService.Exceptions;
+using MessagingApi;
 
 namespace FileFormatterService
 {
@@ -12,18 +14,17 @@ namespace FileFormatterService
         private ImageWatcher _imageWatcher;
         private ServiceState _state;
         private readonly IFileBuilderFactory _fileBuilderFactory;
-        private readonly IMessagesSender _messageSender;
+        private readonly IMessagesController _messageController;
 
-        public FileFormatterService(IFileBuilderFactory fileBuilderFactory, IMessagesSender messageSender)
+        public FileFormatterService(IFileBuilderFactory fileBuilderFactory, IMessagesController messageController)
         {
             _fileBuilderFactory = fileBuilderFactory;
-            _messageSender = messageSender;
+            _messageController = messageController;
 
 #if DEBUG
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
             var imagesPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", "ImagesReceiver"));
             MonitoringPaths.Add(imagesPath);
-            OutputPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", "Output"));
             DamagedPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", "Damaged"));
             FileType = FileType.Pdf;
             NewPageTimeOut = 4000;
@@ -51,7 +52,7 @@ namespace FileFormatterService
 
         private void CheckDirectoriesForNewData()
         {
-            var imagesPaths = new List<string>();
+            var sourceFilePaths = new List<string>();
             foreach (var path in MonitoringPaths)
             {
                 if (!Directory.Exists(path))
@@ -63,62 +64,68 @@ namespace FileFormatterService
 
                 var dir = new DirectoryInfo(path);
                 var files = dir.GetFilesByExtensions(ImageExtensions);
-                imagesPaths.AddRange(files.Select(x => x.FullName));
+                sourceFilePaths.AddRange(files.Select(x => x.FullName));
             }
 
-            if (imagesPaths.Any())
+            if (sourceFilePaths.Any())
             {
-                var imgArr = imagesPaths.ToArray();
-                try
-                {
-                    using (var stream = new MemoryStream())
-                    {
-                        BuildFile(imgArr, stream);
-                        SendFileToCentralServer(stream);
-                    }
-                    CleanFiles(imgArr);
-                }
-                catch (InvalidOperationException)
-                {
-                    TryMoveFilesToDamagedFolder(imagesPaths);
-                }
+                TryBuildAndSendFilesWithAttempt(sourceFilePaths.ToArray());
             }
         }
 
-        private void BuildFile(string[] imagesPaths, MemoryStream stream)
+        private void TryBuildAndSendFilesWithAttempt(string[] sourceFiles)
         {
-            if (!imagesPaths.Any())
-                return;
-
-            var fileBuilder = _fileBuilderFactory.GetFileBuilder(FileType, OutputPath, imagesPaths);
-            var fileAlias = Path.GetFileNameWithoutExtension(imagesPaths.First())?.Split('_').First();
-
             var attempt = AttemptCount;
             while (attempt > 0)
             {
                 try
                 {
-                    fileBuilder.Build(fileAlias, stream);
+                    using (var stream = new MemoryStream())
+                    {
+                        BuildFile(sourceFiles, stream, out string fileName);
+                        SendFileToCentralServer(stream, fileName);
+                        CleanSourceFiles(sourceFiles);
+                    }
                     attempt = 0;
+                }
+                catch (BuildFileException)
+                {
+                    TryMoveFilesToDamagedFolder(sourceFiles);
                 }
                 catch (Exception)
                 {
-                    if (attempt == 0)
-                        throw new InvalidOperationException();
-
                     attempt--;
                     Thread.Sleep(2000);
                 }
             }
         }
 
-        private void SendFileToCentralServer(MemoryStream stream)
+        private void BuildFile(string[] imagesPaths, MemoryStream stream, out string fileName)
         {
-            var messageSequence = FileMessage.BuildFileMessageSequence(stream, MaxMessagesSize);
-            _messageSender.SendMessagesAsync(messageSequence).GetAwaiter().GetResult();
+            fileName = null;
+            if (!imagesPaths.Any())
+                return;
+
+            var fileBuilder = _fileBuilderFactory.GetFileBuilder(FileType, imagesPaths);
+            var fileAlias = Path.GetFileNameWithoutExtension(imagesPaths.First())?.Split('_').First();
+            try
+            {
+                fileBuilder.Build(fileAlias, stream);
+                fileName = fileBuilder.FileName;
+            }
+            catch (Exception ex)
+            {
+                throw new BuildFileException("Can't build file. Probably file is damaged.", ex);
+            }
         }
 
-        private void CleanFiles(string[] imagesPaths)
+        private void SendFileToCentralServer(MemoryStream stream, string fileName)
+        {
+            var messageSequence = MessageItem.BuildFileMessageSequence(stream, fileName, MaxMessagesSize);
+            _messageController.SendMessagesAsync(messageSequence).GetAwaiter().GetResult();
+        }
+
+        private void CleanSourceFiles(string[] imagesPaths)
         {
             foreach (var imagePath in imagesPaths)
             {
@@ -151,21 +158,9 @@ namespace FileFormatterService
             }
         }
 
-        private void _imageWatcher_EndOfFileEventDetected(string[] imagesPaths)
+        private void _imageWatcher_EndOfFileEventDetected(string[] sourceFilesPaths)
         {
-            try
-            {
-                using (var stream = new MemoryStream())
-                {
-                    BuildFile(imagesPaths, stream);
-                    SendFileToCentralServer(stream);
-                }
-                CleanFiles(imagesPaths);
-            }
-            catch (InvalidOperationException)
-            {
-                TryMoveFilesToDamagedFolder(imagesPaths);
-            }
+            TryBuildAndSendFilesWithAttempt(sourceFilesPaths);
         }
 
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();
@@ -173,8 +168,6 @@ namespace FileFormatterService
         public static int NewPageTimeOut { get; set; } = 10000;
 
         public static FileType FileType { get; set; }
-
-        public static string OutputPath { get; set; }
 
         public static string DamagedPath { get; set; }
 

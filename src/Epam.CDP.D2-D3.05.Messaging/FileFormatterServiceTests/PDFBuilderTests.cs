@@ -12,7 +12,6 @@ namespace FileFormatterServiceTests
     {
         public TestContext TestContext { get; set; }
         private static string _imageName;
-        private static string _outputPath;
         private FileStream _file;
 
         [ClassInitialize]
@@ -20,7 +19,6 @@ namespace FileFormatterServiceTests
         {
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
             _imageName = Path.GetFullPath(Path.Combine(appDir, "..\\..\\", "Image", "img_1.jpg"));
-            _outputPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\", "Output"));
         }
 
         [TestInitialize]
@@ -50,7 +48,7 @@ namespace FileFormatterServiceTests
         public void Should_Throw_Exception_When_File_Locked()
         {
             // Arrange
-            var builder = new PDFBuilder(_outputPath, new[] { _imageName });
+            var builder = new PDFBuilder(new[] { _imageName });
 
             // Act / Assert
             using (var stream = new MemoryStream())

@@ -4,12 +4,12 @@ namespace FileFormatterService
 {
     public class FileBuilderFactory : IFileBuilderFactory
     {
-        public IFileBuilder GetFileBuilder(FileType fileType, string outputPath, string[] imagesFullNames)
+        public IFileBuilder GetFileBuilder(FileType fileType, string[] imagesFullNames)
         {
             switch (fileType)
             {
                 case FileType.Pdf:
-                    return new PDFBuilder(outputPath, imagesFullNames);
+                    return new PDFBuilder(imagesFullNames);
                 default:
                     throw new NotImplementedException();
             }

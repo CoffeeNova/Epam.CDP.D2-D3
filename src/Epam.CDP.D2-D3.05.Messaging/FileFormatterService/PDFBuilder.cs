@@ -13,11 +13,8 @@ namespace FileFormatterService
     {
         private readonly string[] _imagesPaths;
 
-        public PDFBuilder(string outputPath, string[] imagesFullNames)
+        public PDFBuilder(string[] imagesFullNames)
         {
-            if (string.IsNullOrEmpty(outputPath) || !Directory.Exists(outputPath))
-                throw new ArgumentException($"Path '{outputPath}' should exist");
-
             if (imagesFullNames.Any(string.IsNullOrEmpty) || !imagesFullNames.All(File.Exists))
                 throw new ArgumentException("Some images doesn't exists", nameof(imagesFullNames));
 

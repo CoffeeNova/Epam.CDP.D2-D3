@@ -4,6 +4,7 @@ using Common;
 using Topshelf;
 using Topshelf.StartParameters;
 using System.Configuration;
+using MessagingApi.AzureServiceBus;
 
 namespace FileFormatterService
 {
@@ -24,7 +25,7 @@ namespace FileFormatterService
 
                     x.Service<FileFormatterService>(conf =>
                     {
-                        conf.ConstructUsing(() => new FileFormatterService(new FileBuilderFactory(), new AzureMessagesSender(sbConf)));
+                        conf.ConstructUsing(() => new FileFormatterService(new FileBuilderFactory(), new AzureMessagesController(sbConf)));
                         conf.WhenStarted(s => s.Start());
                         conf.WhenStopped(s => s.Stop());
                     });
@@ -55,14 +56,6 @@ namespace FileFormatterService
                             throw new InvalidOperationException("'filetype' parameter is wrong.");
 
                         FileFormatterService.FileType = fileType;
-                    });
-
-                    x.WithStartParameter("output", a =>
-                    {
-                        if (!Directory.Exists(a))
-                            throw new InvalidOperationException("'output' parameter path doesn't exist.");
-
-                        FileFormatterService.OutputPath = a;
                     });
 
                     x.WithStartParameter("damaged", a =>

@@ -2,6 +2,6 @@
 {
     public interface IFileBuilderFactory
     {
-        IFileBuilder GetFileBuilder(FileType fileType, string outputPath, string[] imagesFullNames);
+        IFileBuilder GetFileBuilder(FileType fileType, string[] imagesFullNames);
     }
 }
