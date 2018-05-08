@@ -13,7 +13,7 @@ namespace Common
 
             foreach (var ext in extensions)
             {
-                foreach (var file in dir.GetFiles(ext))
+                foreach (var file in dir.GetFiles("*." + ext))
                     yield return file;
             }
         }
