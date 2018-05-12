@@ -82,7 +82,7 @@ namespace FileFormatterService
                 {
                     using (var stream = new MemoryStream())
                     {
-                        BuildFile(sourceFiles, stream, out string fileName);
+                        BuildFile(sourceFiles, stream, out var fileName);
                         SendFileToCentralServer(stream, fileName);
                         CleanSourceFiles(sourceFiles);
                     }
@@ -177,6 +177,8 @@ namespace FileFormatterService
         /// Max messages size in bytes
         /// </summary>
         public static int MaxMessagesSize { get; set; } = 64 * 1024;
+
+        public static string NodeName { get; set; } = "node1";
 
         private enum ServiceState
         {

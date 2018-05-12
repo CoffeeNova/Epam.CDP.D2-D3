@@ -77,6 +77,25 @@ namespace FileFormatterService
                         FileFormatterService.AttemptCount = attempt;
                     });
 
+                    x.WithStartParameter("maxmsgsize", a =>
+                    {
+                        if (string.IsNullOrEmpty(a))
+                            return;
+
+                        if (!int.TryParse(a, out int maxMsgSize))
+                            throw new InvalidOperationException("'attempt' parameter should be a number.");
+
+                        FileFormatterService.MaxMessagesSize = maxMsgSize;
+                    });
+
+                    x.WithStartParameter("nodename", a =>
+                    {
+                        if (string.IsNullOrEmpty(a))
+                            return;
+
+                        FileFormatterService.NodeName = a;
+                    });
+
                     x.SetServiceName("FileFormatterService");
                     x.SetDisplayName("File Formatter Service");
                     x.SetDescription("Service which glues images together in single file of the specified type");

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
+using Newtonsoft.Json;
 
 namespace MessagingApi.AzureServiceBus
 {
@@ -20,7 +20,10 @@ namespace MessagingApi.AzureServiceBus
             var manager = NamespaceManager.CreateFromConnectionString(_configuration.ConnectionString);
             if (!await manager.QueueExistsAsync(_configuration.QueueName))
             {
-                var queueDescription = new QueueDescription(_configuration.QueueName);
+                var queueDescription = new QueueDescription(_configuration.QueueName)
+                {
+                    DefaultMessageTimeToLive = new TimeSpan(0, 0, MessageTtl)
+                };
                 await manager.CreateQueueAsync(queueDescription);
             }
         }
@@ -28,16 +31,23 @@ namespace MessagingApi.AzureServiceBus
         public async Task SendMessagesAsync(MessageItem[] messages)
         {
             var queueClient = QueueClient.CreateFromConnectionString(_configuration.ConnectionString, _configuration.QueueName, ReceiveMode.ReceiveAndDelete);
-            await queueClient.SendBatchAsync(messages.Select(x => new BrokeredMessage(x)));
+            foreach (var message in messages)
+            {
+                await queueClient.SendAsync(new BrokeredMessage(JsonConvert.SerializeObject(message)));
+            }
             await queueClient.CloseAsync();
         }
 
-        public async Task<MessageItem[]> RecieveMessagesAsync(int messagesCount)
+        public async Task<MessageItem> RecieveMessageAsync()
         {
             var queueClient = QueueClient.CreateFromConnectionString(_configuration.ConnectionString, _configuration.QueueName, ReceiveMode.ReceiveAndDelete);
-            var result = await queueClient.ReceiveBatchAsync(messagesCount);
+            var result = await queueClient.ReceiveAsync();
+            var body = result.GetBody<string>();
             await queueClient.CloseAsync();
-            return result.Select(x => x.GetBody<MessageItem>()).ToArray();
+
+            return JsonConvert.DeserializeObject<MessageItem>(body);
         }
+
+        public int MessageTtl { get; set; } = 60;
     }
 }

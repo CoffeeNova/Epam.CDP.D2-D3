@@ -6,6 +6,7 @@ namespace MessagingApi
     {
         Task CreateQueue();
         Task SendMessagesAsync(MessageItem[] messages);
-        Task<MessageItem[]> RecieveMessagesAsync(int messagesCount);
+        Task<MessageItem> RecieveMessageAsync();
+        int MessageTtl { get; set; }
     }
 }

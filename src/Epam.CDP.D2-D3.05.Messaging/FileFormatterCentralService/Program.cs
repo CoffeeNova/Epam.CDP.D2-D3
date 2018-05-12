@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MessagingApi.AzureServiceBus;
 using Topshelf;
 using Topshelf.StartParameters;
@@ -29,7 +25,7 @@ namespace FileFormatterCentralService
                     x.Service<FileFormatterCentralService>(conf =>
                     {
                         conf.ConstructUsing(() => new FileFormatterCentralService(new AzureMessagesController(sbConf)));
-                        conf.WhenStarted(s => s.Start());
+                        conf.WhenStarted((s, hostControl) => s.Start(hostControl));
                         conf.WhenStopped(s => s.Stop());
                     });
 
@@ -41,9 +37,9 @@ namespace FileFormatterCentralService
                         FileFormatterCentralService.OutputPath = a;
                     });
 
-                    x.SetServiceName("FileFormatterService");
-                    x.SetDisplayName("File Formatter Service");
-                    x.SetDescription("Service which glues images together in single file of the specified type");
+                    x.SetServiceName("FileFormatterCentralService");
+                    x.SetDisplayName("File Formatter Central Service");
+                    x.SetDescription("Centralized management service, which controls file formatter services.");
                     x.StartAutomaticallyDelayed();
                     x.RunAsLocalService();
                     x.EnableServiceRecovery(r =>
