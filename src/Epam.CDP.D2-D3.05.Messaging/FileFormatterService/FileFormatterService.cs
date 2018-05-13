@@ -2,24 +2,36 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Common;
+using FileFormatter.Common;
 using FileFormatterService.Exceptions;
-using MessagingApi;
+using MessagingApi.AzureServiceBus;
+using Topshelf;
 
 namespace FileFormatterService
 {
     public class FileFormatterService
     {
         private ImageWatcher _imageWatcher;
-        private ServiceState _state;
+        private ServiceStatus _status;
         private readonly IFileBuilderFactory _fileBuilderFactory;
-        private readonly IMessagesController _messageController;
+        private readonly IServiceBusConfiguration _fileQueueConfig;
+        private readonly IServiceBusConfiguration _statusQueueConfig;
+        private readonly IServiceBusConfiguration _controlQueueConfig;
+        private readonly IFileFormatterSettingsExchanger _settingsExchanger;
 
-        public FileFormatterService(IFileBuilderFactory fileBuilderFactory, IMessagesController messageController)
+        public FileFormatterService(IFileBuilderFactory fileBuilderFactory, IServiceBusConfiguration fileQueueConfig, IServiceBusConfiguration statusQueueConfig, IServiceBusConfiguration controlQueueConfig)
         {
             _fileBuilderFactory = fileBuilderFactory;
-            _messageController = messageController;
+            _fileQueueConfig = fileQueueConfig;
+            _statusQueueConfig = statusQueueConfig;
+            _controlQueueConfig = controlQueueConfig;
+
+            _controlQueueConfig.SubscriptionName = NodeName;
+
+            _settingsExchanger = new FileFormatterSettingsExchanger();
 
 #if DEBUG
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -31,23 +43,39 @@ namespace FileFormatterService
 #endif
         }
 
-        public void Start()
+        public bool Start(HostControl hostControl)
         {
-            if (_state == ServiceState.Started)
-                return;
+            if (_status != ServiceStatus.Stopped)
+                return true;
+            try
+            {
+                CheckDirectoriesForNewData();
+                ImageWatcherHelper.CreateImageWatcher(out _imageWatcher, ImageExtensions.ToList(), MonitoringPaths, NewPageTimeOut, _imageWatcher_EndOfFileEventDetected);
 
-            CheckDirectoriesForNewData();
-            ImageWatcherHelper.CreateImageWatcher(out _imageWatcher, ImageExtensions.ToList(), MonitoringPaths, NewPageTimeOut, _imageWatcher_EndOfFileEventDetected);
-            _state = ServiceState.Started;
+                _settingsExchanger.SubscribeToSettingsSender(GetCurrentServiceSettings, _statusQueueConfig);
+                _settingsExchanger.SubscribeToNewSettingsReceiver(OnReceiveNewSettings, _controlQueueConfig);
+            }
+            catch
+            {
+                //log
+                hostControl.Stop();
+                return true;
+            }
+
+            _status = ServiceStatus.Waiting;
+            return true;
         }
 
         public void Stop()
         {
-            if (_state == ServiceState.Stopped)
+            if (_status != ServiceStatus.Waiting)
                 return;
 
             ImageWatcherHelper.DisposeImageWatcher(ref _imageWatcher, _imageWatcher_EndOfFileEventDetected);
-            _state = ServiceState.Stopped;
+            _settingsExchanger.UnSubscribeFromSettingsSender();
+            _settingsExchanger.UnSubscribeFromNewSettingsReceiver();
+
+            _status = ServiceStatus.Stopped;
         }
 
         private void CheckDirectoriesForNewData()
@@ -107,7 +135,7 @@ namespace FileFormatterService
                 return;
 
             var fileBuilder = _fileBuilderFactory.GetFileBuilder(FileType, imagesPaths);
-            var fileAlias = Path.GetFileNameWithoutExtension(imagesPaths.First())?.Split('_').First();
+            var fileAlias = BuildFileAlias(imagesPaths.First());
             try
             {
                 fileBuilder.Build(fileAlias, stream);
@@ -121,8 +149,9 @@ namespace FileFormatterService
 
         private void SendFileToCentralServer(MemoryStream stream, string fileName)
         {
-            var messageSequence = MessageItem.BuildFileMessageSequence(stream, fileName, MaxMessagesSize);
-            _messageController.SendMessagesAsync(messageSequence).GetAwaiter().GetResult();
+            var messageSequence = FileMessageItem.BuildFileMessageSequence(stream, fileName, MaxMessagesSize);
+            var fileMessagesController = new AzureMessagesQueueController(_fileQueueConfig);
+            fileMessagesController.SendMessagesAsync(messageSequence).GetAwaiter().GetResult();
         }
 
         private void CleanSourceFiles(string[] imagesPaths)
@@ -163,6 +192,37 @@ namespace FileFormatterService
             TryBuildAndSendFilesWithAttempt(sourceFilesPaths);
         }
 
+        private string BuildFileAlias(string imagePath)
+        {
+            var sb = new StringBuilder(NodeName);
+            sb.Append("_");
+            sb.Append(Path.GetFileNameWithoutExtension(imagePath)?.Split('_').First());
+
+            return sb.ToString();
+        }
+
+        private FileFormatterSettings GetCurrentServiceSettings()
+        {
+            return new FileFormatterSettings
+            {
+                ServiceStatus = _status,
+                NewPageTimeOut = NewPageTimeOut,
+                NodeName = NodeName,
+                Date = DateTime.Now
+            };
+        }
+
+        private void OnReceiveNewSettings(FileFormatterSettings settings)
+        {
+            if (!string.Equals(NodeName, settings.NodeName, StringComparison.Ordinal))
+                return;
+
+            if (settings.NewPageTimeOut.HasValue)
+                NewPageTimeOut = settings.NewPageTimeOut.Value;
+
+            //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
+        }
+
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();
 
         public static int NewPageTimeOut { get; set; } = 10000;
@@ -179,12 +239,6 @@ namespace FileFormatterService
         public static int MaxMessagesSize { get; set; } = 64 * 1024;
 
         public static string NodeName { get; set; } = "node1";
-
-        private enum ServiceState
-        {
-            Stopped,
-            Started
-        }
 
         private string[] ImageExtensions => new[] { Constants.FileExtension.Jpg, Constants.FileExtension.Png };
     }

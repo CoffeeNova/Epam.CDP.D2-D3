@@ -1,28 +1,38 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using Common;
+using FileFormatter.Common;
 using MessagingApi;
+using MessagingApi.AzureServiceBus;
+using Newtonsoft.Json;
 using Topshelf;
 
 namespace FileFormatterCentralService
 {
     public class FileFormatterCentralService
     {
-        private readonly IMessagesController _messageController;
+        private readonly IMessagesController _fileQueueController;
+        private readonly IFileAssembler _fileAssembler;
+        private readonly IServiceBusConfiguration _statusQueueConfig;
+        private readonly IServiceBusConfiguration _controlQueueConfig;
+        private readonly IFileFormatterSettingsExchanger _settingsExchanger;
         private ServiceState _state;
-        private CancellationTokenSource _cts;
+        private DateTime _settingsFileLastWriteTime;
 
-        public FileFormatterCentralService(IMessagesController messageController)
+        public FileFormatterCentralService(IFileAssembler fileAssembler, IServiceBusConfiguration fileQueueConfig, IServiceBusConfiguration statusQueueConfig, IServiceBusConfiguration controlQueueConfig)
         {
-            _messageController = messageController;
 #if DEBUG
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
-            OutputPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", "Output"));
+            OutputPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", OutputFolderName));
+            SystemFilesPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\"));
+            DefaultNewPageTimeout = 10;
 #endif
+
+            _statusQueueConfig = statusQueueConfig;
+            _controlQueueConfig = controlQueueConfig;
+            _fileQueueController = new AzureMessagesQueueController(fileQueueConfig);
+            _fileAssembler = fileAssembler;
+            _settingsExchanger = new FileFormatterSettingsExchanger();
         }
 
         public bool Start(HostControl hostControl)
@@ -30,13 +40,16 @@ namespace FileFormatterCentralService
             if (_state == ServiceState.Started)
                 return true;
 
-            if (!TryCreateQueue())
+            if (!TryCreateQueues() || !TryCreateConfigFile())
             {
                 hostControl.Stop();
                 return true;
             }
 
-            StartMessagesMonitor();
+            _fileAssembler.StartAssebling(OutputPath, _fileQueueController);
+
+            _settingsExchanger.SubscribeToSettingsSender(GetSettingsFromFile, _controlQueueConfig);
+            _settingsExchanger.SubscribeToNewSettingsReceiver(OnReceiveSettingsFromClients, _statusQueueConfig);
 
             _state = ServiceState.Started;
             return true;
@@ -47,15 +60,21 @@ namespace FileFormatterCentralService
             if (_state == ServiceState.Stopped)
                 return;
 
-            StopMessagesMonitor();
+            _fileAssembler.StopAssebling();
             _state = ServiceState.Stopped;
         }
 
-        private bool TryCreateQueue()
+        private bool TryCreateQueues()
         {
             try
             {
-                _messageController.CreateQueue().GetAwaiter().GetResult();
+                var statusQueueController = new AzureMessagesTopicController(_statusQueueConfig);
+                var controlQueueController = new AzureMessagesTopicController(_controlQueueConfig);
+
+                Task.WaitAll(_fileQueueController.CreateQueueAsync(),
+                            statusQueueController.CreateQueueAsync(),
+                            controlQueueController.CreateQueueAsync());
+
                 return true;
             }
             catch
@@ -65,89 +84,61 @@ namespace FileFormatterCentralService
             }
         }
 
-        private void StartMessagesMonitor()
+        private bool TryCreateConfigFile()
         {
-            _cts = new CancellationTokenSource();
-            Task.Run(async () =>
+            var configFilePath = Path.Combine(SystemFilesPath, FileFormatterConfigFileName);
+            if (File.Exists(configFilePath))
+                return true;
+
+            try
             {
-                while (!_cts.IsCancellationRequested)
+                using (var file = File.CreateText(configFilePath))
                 {
-                    try
+                    var serializer = new JsonSerializer();
+                    serializer.Serialize(file, new FileFormatterSettings
                     {
-                        var message = await _messageController.RecieveMessageAsync();
-                        if (message != null)
-                        {
-                            if (_messagesContainer.TryGetValue(message.SequenceId, out var messages))
-                                messages?.Messages.Add(message);
-                            else
-                                _messagesContainer.Add(message.SequenceId, new MessageSequence(_messageController.MessageTtl, DateTime.Now, message));
-                        }
-
-                        if (!_messagesContainer.Any())
-                            continue;
-
-                        foreach (var assembledSequence in _messagesContainer.Values.Where(x => x.IsAssembled))
-                        {
-                            var body = assembledSequence.CollectBody();
-                            var bodyChecksum = Helper.ComputeChecksum(body);
-                            if (!string.Equals(assembledSequence.FileChecksum, bodyChecksum, StringComparison.Ordinal))
-                                continue;
-
-                            using (var fs = File.Create(Path.Combine(OutputPath, assembledSequence.FileName), body.Length, FileOptions.Asynchronous))
-                            {
-                                await fs.WriteAsync(body, 0, body.Length);
-                                await fs.FlushAsync();
-                            }
-                        }
-                        _messagesContainer.RemoveAll(x => x.IsExpired || x.IsAssembled);
-
-
-                        Thread.Sleep(2000);
-                    }
-                    catch
-                    {
-                        //to log
-                    }
+                        NewPageTimeOut = DefaultNewPageTimeout
+                    });
                 }
 
-            }, _cts.Token);
-        }
-
-        private readonly IDictionary<string, MessageSequence> _messagesContainer = new Dictionary<string, MessageSequence>();
-        private class MessageSequence
-        {
-            public MessageSequence(int sequenceTtl, DateTime createdDate, MessageItem message)
-            {
-                _sequenceTtl = sequenceTtl;
-                _createdDate = createdDate;
-                _sequenceCount = message.SequenceCount;
-                Messages = new List<MessageItem> { message };
-                FileName = message.FileName;
-                FileChecksum = message.FileChecksum;
+                return true;
             }
-
-            public byte[] CollectBody()
+            catch
             {
-                return Messages.OrderBy(y => y.Id).SelectMany(y => y.Body).ToArray();
+                //to log cannot create config file
+                return false;
             }
-
-            private readonly int _sequenceTtl;
-            private readonly DateTime _createdDate;
-            private readonly int _sequenceCount;
-
-            public ICollection<MessageItem> Messages { get; }
-            public bool IsExpired => DateTime.Now.Subtract(_createdDate).TotalSeconds > _sequenceTtl;
-            public bool IsAssembled => Messages.Count == _sequenceCount;
-
-            public string FileName { get; }
-            public string FileChecksum { get; }
         }
 
-        private void StopMessagesMonitor()
+        private FileFormatterSettings GetSettingsFromFile()
         {
-            _cts.Cancel();
-            _cts.Dispose();
+            try
+            {
+                var configFilePath = Path.Combine(SystemFilesPath, FileFormatterConfigFileName);
+                var lastWriteTime = File.GetLastWriteTime(configFilePath);
+                if (_settingsFileLastWriteTime == lastWriteTime)
+                    return null;
+
+                _settingsFileLastWriteTime = lastWriteTime;
+                var json = File.ReadAllText(configFilePath);
+                return JsonConvert.DeserializeObject<FileFormatterSettings>(json);
+            }
+            catch
+            {
+                //to log "config file with errors"
+                return null;
+            }
         }
+
+        private void OnReceiveSettingsFromClients(FileFormatterSettings settings)
+        {
+            using (var file = File.CreateText(Path.Combine(SystemFilesPath, ClientsSettingsFileName)))
+            {
+                var serializer = new JsonSerializer();
+                serializer.Serialize(file, settings);
+            }
+        }
+
 
         private enum ServiceState
         {
@@ -156,5 +147,12 @@ namespace FileFormatterCentralService
         }
 
         public static string OutputPath { get; set; }
+        public static string SystemFilesPath { get; set; }
+
+        public static int DefaultNewPageTimeout { get; set; } //in ms
+
+        private const string OutputFolderName = "Output";
+        private const string ClientsSettingsFileName = "ClientsSettings.log";
+        private const string FileFormatterConfigFileName = "FileFormatterConfig.json";
     }
 }

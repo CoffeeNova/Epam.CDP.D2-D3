@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileFormatterCentralService
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagingApi", "MessagingApi\MessagingApi.csproj", "{07D10747-0B87-4D69-8235-0BAE9FAB34F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileFormatter.Common", "FileFormatter.Common\FileFormatter.Common.csproj", "{67DA9290-B98C-44E6-BF4F-DBDCB9F381FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{07D10747-0B87-4D69-8235-0BAE9FAB34F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07D10747-0B87-4D69-8235-0BAE9FAB34F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07D10747-0B87-4D69-8235-0BAE9FAB34F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67DA9290-B98C-44E6-BF4F-DBDCB9F381FB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67DA9290-B98C-44E6-BF4F-DBDCB9F381FB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67DA9290-B98C-44E6-BF4F-DBDCB9F381FB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67DA9290-B98C-44E6-BF4F-DBDCB9F381FB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

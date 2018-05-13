@@ -5,6 +5,7 @@ using Topshelf;
 using Topshelf.StartParameters;
 using System.Configuration;
 using MessagingApi.AzureServiceBus;
+using C = FileFormatter.Common.Constants.ConfigurationConsts;
 
 namespace FileFormatterService
 {
@@ -12,10 +13,23 @@ namespace FileFormatterService
     {
         static void Main()
         {
-            var sbConf = new ServiceBusConfiguration
+            var fileQueueConf = new ServiceBusConfiguration
             {
-                ConnectionString = ConfigurationManager.AppSettings["Microsoft.ServiceBus.ConnectionString"],
-                QueueName = ConfigurationManager.AppSettings["Microsoft.ServiceBus.QueueName"]
+                ConfigurationName = C.FileQueueConfigName,
+                ConnectionString = ConfigurationManager.AppSettings[C.ConnectionString],
+                QueueName = ConfigurationManager.AppSettings[C.FileQueueName]
+            };
+            var statusQueueConf = new ServiceBusConfiguration
+            {
+                ConfigurationName = C.StatusQueueTopicName,
+                ConnectionString = ConfigurationManager.AppSettings[C.ConnectionString],
+                TopicName = ConfigurationManager.AppSettings[C.StatusTopicName]
+            };
+            var controlQueueConf = new ServiceBusConfiguration
+            {
+                ConfigurationName = C.ControlQueueName,
+                ConnectionString = ConfigurationManager.AppSettings[C.ConnectionString],
+                TopicName = ConfigurationManager.AppSettings[C.ControlTopicName]
             };
 
             HostFactory.Run(
@@ -25,8 +39,8 @@ namespace FileFormatterService
 
                     x.Service<FileFormatterService>(conf =>
                     {
-                        conf.ConstructUsing(() => new FileFormatterService(new FileBuilderFactory(), new AzureMessagesController(sbConf)));
-                        conf.WhenStarted(s => s.Start());
+                        conf.ConstructUsing(() => new FileFormatterService(new FileBuilderFactory(), fileQueueConf, statusQueueConf, controlQueueConf));
+                        conf.WhenStarted((s, hostControl) => s.Start(hostControl));
                         conf.WhenStopped(s => s.Stop());
                     });
 

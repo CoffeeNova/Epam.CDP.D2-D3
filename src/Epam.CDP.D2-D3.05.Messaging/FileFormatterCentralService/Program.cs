@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Configuration;
 using System.IO;
+using FileFormatter.Common;
 using MessagingApi.AzureServiceBus;
 using Topshelf;
 using Topshelf.StartParameters;
+using C = FileFormatter.Common.Constants.ConfigurationConsts;
 
 namespace FileFormatterCentralService
 {
@@ -11,10 +13,24 @@ namespace FileFormatterCentralService
     {
         static void Main()
         {
-            var sbConf = new ServiceBusConfiguration
+            var fileQueueConf = new ServiceBusConfiguration
             {
-                ConnectionString = ConfigurationManager.AppSettings["Microsoft.ServiceBus.ConnectionString"],
-                QueueName = ConfigurationManager.AppSettings["Microsoft.ServiceBus.QueueName"]
+                ConfigurationName = C.FileQueueConfigName,
+                ConnectionString = ConfigurationManager.AppSettings[C.ConnectionString],
+                QueueName = ConfigurationManager.AppSettings[C.FileQueueName],
+            };
+            var statusQueueConf = new ServiceBusConfiguration
+            {
+                ConfigurationName = C.StatusQueueTopicName,
+                ConnectionString = ConfigurationManager.AppSettings[C.ConnectionString],
+                TopicName = ConfigurationManager.AppSettings[C.StatusTopicName],
+                SubscriptionName = ConfigurationManager.AppSettings[C.StatusSubscriptionName],
+            };
+            var controlQueueConf = new ServiceBusConfiguration
+            {
+                ConfigurationName = C.ControlQueueName,
+                ConnectionString = ConfigurationManager.AppSettings[C.ConnectionString],
+                TopicName = ConfigurationManager.AppSettings[C.ControlTopicName],
             };
 
             HostFactory.Run(
@@ -24,7 +40,7 @@ namespace FileFormatterCentralService
 
                     x.Service<FileFormatterCentralService>(conf =>
                     {
-                        conf.ConstructUsing(() => new FileFormatterCentralService(new AzureMessagesController(sbConf)));
+                        conf.ConstructUsing(() => new FileFormatterCentralService(new FileAssembler1(), fileQueueConf, statusQueueConf, controlQueueConf));
                         conf.WhenStarted((s, hostControl) => s.Start(hostControl));
                         conf.WhenStopped(s => s.Stop());
                     });
@@ -35,6 +51,25 @@ namespace FileFormatterCentralService
                             throw new InvalidOperationException("'output' parameter path doesn't exist.");
 
                         FileFormatterCentralService.OutputPath = a;
+                    });
+
+                    x.WithStartParameter("systemfiles", a =>
+                    {
+                        if (!Directory.Exists(a))
+                            throw new InvalidOperationException("'systemFiles' parameter path doesn't exist.");
+
+                        FileFormatterCentralService.SystemFilesPath = a;
+                    });
+
+                    x.WithStartParameter("timeout", a =>
+                    {
+                        if (string.IsNullOrEmpty(a))
+                            return;
+
+                        if (!int.TryParse(a, out int timeout))
+                            throw new InvalidOperationException("'timeout' parameter should be a number.");
+
+                        FileFormatterCentralService.DefaultNewPageTimeout = timeout;
                     });
 
                     x.SetServiceName("FileFormatterCentralService");

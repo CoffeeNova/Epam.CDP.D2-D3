@@ -72,7 +72,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Constants.cs" />
     <Compile Include="Exceptions\BuildFileException.cs" />
     <Compile Include="FileBuilderFactory.cs" />
     <Compile Include="FileType.cs" />
@@ -86,13 +85,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Common.csproj">
       <Project>{2df5384d-dd7d-401a-806b-664a90ec3a8f}</Project>
       <Name>Common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FileFormatter.Common\FileFormatter.Common.csproj">
+      <Project>{67da9290-b98c-44e6-bf4f-dbdcb9f381fb}</Project>
+      <Name>FileFormatter.Common</Name>
     </ProjectReference>
     <ProjectReference Include="..\MessagingApi\MessagingApi.csproj">
       <Project>{07d10747-0b87-4d69-8235-0bae9fab34f0}</Project>
