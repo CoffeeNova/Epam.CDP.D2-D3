@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Threading.Tasks;
 using MessagingApi.AzureServiceBus;
 
 namespace FileFormatter.Common
 {
     public interface IFileFormatterSettingsExchanger
     {
-        void SubscribeToSettingsSender(Func<FileFormatterSettings> settingsCollector, IServiceBusConfiguration configuration);
+        Task SubscribeToSettingsSender(Func<FileFormatterSettings> settingsCollector, IServiceBusConfiguration configuration);
         void UnSubscribeFromSettingsSender();
-        void SubscribeToNewSettingsReceiver(Action<FileFormatterSettings> onReceiveSettings, IServiceBusConfiguration configuration);
-        void UnSubscribeFromNewSettingsReceiver();
+        Task SubscribeToSettingsReceiver(Func<FileFormatterSettings, Task> onReceiveSettings, IServiceBusConfiguration configuration);
+        void UnSubscribeFromSettingsReceiver();
     }
 }

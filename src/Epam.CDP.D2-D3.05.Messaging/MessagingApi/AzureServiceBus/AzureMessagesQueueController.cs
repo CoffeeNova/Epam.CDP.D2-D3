@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus;
@@ -45,7 +44,11 @@ namespace MessagingApi.AzureServiceBus
         public override async Task SendMessagesAsync<TMessage>(TMessage[] messages)
         {
             var queueClient = QueueClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.QueueName, ReceiveMode.ReceiveAndDelete);
-            await queueClient.SendBatchAsync(messages.Select(x => new BrokeredMessage(JsonConvert.SerializeObject(x))));
+            foreach (var message in messages)
+            {
+                await queueClient.SendAsync(new BrokeredMessage(JsonConvert.SerializeObject(message)));
+            }
+
             await queueClient.CloseAsync();
         }
 

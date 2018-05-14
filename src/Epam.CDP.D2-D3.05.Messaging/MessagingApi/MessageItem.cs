@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace MessagingApi
 {
@@ -10,5 +11,7 @@ namespace MessagingApi
         public string SequenceId { get; set; }
         [JsonProperty("sequenceCount")]
         public int SequenceCount { get; set; }
+        [JsonProperty("date")]
+        public DateTime? Date { get; set; }
     }
 }

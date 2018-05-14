@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Common;
 using FileFormatter.Common;
 using FileFormatterService.Exceptions;
@@ -53,7 +54,7 @@ namespace FileFormatterService
                 ImageWatcherHelper.CreateImageWatcher(out _imageWatcher, ImageExtensions.ToList(), MonitoringPaths, NewPageTimeOut, _imageWatcher_EndOfFileEventDetected);
 
                 _settingsExchanger.SubscribeToSettingsSender(GetCurrentServiceSettings, _statusQueueConfig);
-                _settingsExchanger.SubscribeToNewSettingsReceiver(OnReceiveNewSettings, _controlQueueConfig);
+                _settingsExchanger.SubscribeToSettingsReceiver(OnReceiveNewSettings, _controlQueueConfig);
             }
             catch
             {
@@ -63,6 +64,7 @@ namespace FileFormatterService
             }
 
             _status = ServiceStatus.Waiting;
+
             return true;
         }
 
@@ -73,7 +75,7 @@ namespace FileFormatterService
 
             ImageWatcherHelper.DisposeImageWatcher(ref _imageWatcher, _imageWatcher_EndOfFileEventDetected);
             _settingsExchanger.UnSubscribeFromSettingsSender();
-            _settingsExchanger.UnSubscribeFromNewSettingsReceiver();
+            _settingsExchanger.UnSubscribeFromSettingsReceiver();
 
             _status = ServiceStatus.Stopped;
         }
@@ -212,15 +214,13 @@ namespace FileFormatterService
             };
         }
 
-        private void OnReceiveNewSettings(FileFormatterSettings settings)
+        private Task OnReceiveNewSettings(FileFormatterSettings settings)
         {
-            if (!string.Equals(NodeName, settings.NodeName, StringComparison.Ordinal))
-                return;
-
             if (settings.NewPageTimeOut.HasValue)
                 NewPageTimeOut = settings.NewPageTimeOut.Value;
+                //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
 
-            //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
+            return Task.FromResult<object>(null);
         }
 
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();

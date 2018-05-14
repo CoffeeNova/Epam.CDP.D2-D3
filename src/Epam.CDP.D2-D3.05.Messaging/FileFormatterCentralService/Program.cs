@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using System.IO;
-using FileFormatter.Common;
 using MessagingApi.AzureServiceBus;
 using Topshelf;
 using Topshelf.StartParameters;

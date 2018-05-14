@@ -49,7 +49,7 @@ namespace FileFormatterCentralService
             _fileAssembler.StartAssebling(OutputPath, _fileQueueController);
 
             _settingsExchanger.SubscribeToSettingsSender(GetSettingsFromFile, _controlQueueConfig);
-            _settingsExchanger.SubscribeToNewSettingsReceiver(OnReceiveSettingsFromClients, _statusQueueConfig);
+            _settingsExchanger.SubscribeToSettingsReceiver(OnReceiveSettingsFromClients, _statusQueueConfig);
 
             _state = ServiceState.Started;
             return true;
@@ -61,6 +61,9 @@ namespace FileFormatterCentralService
                 return;
 
             _fileAssembler.StopAssebling();
+            _settingsExchanger.UnSubscribeFromSettingsSender();
+            _settingsExchanger.UnSubscribeFromSettingsReceiver();
+
             _state = ServiceState.Stopped;
         }
 
@@ -130,12 +133,13 @@ namespace FileFormatterCentralService
             }
         }
 
-        private void OnReceiveSettingsFromClients(FileFormatterSettings settings)
+        private async Task OnReceiveSettingsFromClients(FileFormatterSettings settings)
         {
-            using (var file = File.CreateText(Path.Combine(SystemFilesPath, ClientsSettingsFileName)))
+            using (var file = File.AppendText(Path.Combine(SystemFilesPath, ClientsSettingsFileName)))
             {
-                var serializer = new JsonSerializer();
-                serializer.Serialize(file, settings);
+                var json = JsonConvert.SerializeObject(settings);
+                await file.WriteLineAsync(json);
+                await file.FlushAsync();
             }
         }
 

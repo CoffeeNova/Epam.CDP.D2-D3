@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
@@ -44,7 +43,11 @@ namespace MessagingApi.AzureServiceBus
         public override async Task SendMessagesAsync<TMessage>(TMessage[] messages)
         {
             var topicClient = TopicClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.TopicName);
-            await topicClient.SendBatchAsync(messages.Select(x => new BrokeredMessage(JsonConvert.SerializeObject(x))));
+            foreach (var message in messages)
+            {
+                await topicClient.SendAsync(new BrokeredMessage(JsonConvert.SerializeObject(message)));
+            }
+
             await topicClient.CloseAsync();
         }
 
@@ -53,8 +56,13 @@ namespace MessagingApi.AzureServiceBus
             throw new NotImplementedException();
         }
 
+
+        private SubscriptionClient _subscrClient;
         public override async Task SubscribeToQueueAsync<TMessage>(Func<TMessage, Task> messageHandler)
         {
+            if (_subscrClient != null && !_subscrClient.IsClosed)
+                throw new InvalidOperationException("Already subscribed. Please unsubscribe first.");
+
             var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
             if (!await manager.SubscriptionExistsAsync(Configuration.TopicName, Configuration.SubscriptionName))
             {
@@ -65,19 +73,20 @@ namespace MessagingApi.AzureServiceBus
                 await manager.CreateSubscriptionAsync(subscrDescr);
             }
 
-            var subscrClient = SubscriptionClient.Create(Configuration.TopicName, Configuration.SubscriptionName);
-            subscrClient.OnMessageAsync(x =>
+            _subscrClient = SubscriptionClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.TopicName, Configuration.SubscriptionName);
+            _subscrClient.OnMessageAsync(x =>
             {
                 var body = x.GetBody<string>();
                 var messageItem = JsonConvert.DeserializeObject<TMessage>(body);
                 return messageHandler(messageItem);
             });
-
-            await subscrClient.CloseAsync();
         }
 
         public override async Task UnSubscribeFromQueueAsync()
         {
+            if (_subscrClient != null && !_subscrClient.IsClosed)
+                await _subscrClient.CloseAsync();
+
             var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
             if (await manager.SubscriptionExistsAsync(Configuration.TopicName, Configuration.SubscriptionName))
             {
