@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Common
 {
@@ -10,6 +12,15 @@ namespace Common
             {
                 collection.Add(item);
             }
+        }
+
+        public static IEnumerable<IEnumerable<T>> DivideByLength<T>(this IEnumerable<T> initialList, int chunkLength)
+        {
+            var enumerable = initialList as IList<T> ?? initialList.ToList();
+            var valuesLength = enumerable.Count;
+            var chunks = (int)Math.Ceiling(valuesLength / (double)chunkLength);
+            var dividedList = Enumerable.Range(0, chunks).Select(i => enumerable.Skip(i * chunkLength).Take(chunkLength));
+            return dividedList;
         }
     }
 }
