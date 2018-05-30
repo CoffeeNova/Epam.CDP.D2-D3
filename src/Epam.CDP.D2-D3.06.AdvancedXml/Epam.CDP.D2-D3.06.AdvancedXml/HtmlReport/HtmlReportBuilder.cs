@@ -1,0 +1,41 @@
+﻿using System;
+using System.IO;
+using System.Xml;
+using System.Xml.Xsl;
+
+namespace Epam.CDP.D2_D3._06.AdvancedXml.HtmlReport
+{
+    public class HtmlReportBuilder
+    {
+        private const string HtmlReportXsltLocation = "HtmlReport/HtmlReport.xslt";
+
+        public void CreateRssFeedFile(string xmlPath, string outputPath, string outputFileName = null)
+        {
+            if (string.IsNullOrEmpty(xmlPath))
+                throw new ArgumentNullException(nameof(xmlPath));
+
+            var xmlName = Path.GetFileName(xmlPath);
+            if (!XmlReader.IsName(xmlName))
+                throw new ArgumentException($"Wrong XML file name: {nameof(xmlName)}.");
+
+            if (!File.Exists(xmlPath))
+                throw new FileNotFoundException($"XML file with name: {xmlName} was not found.");
+
+            var xsl = new XslCompiledTransform();
+            xsl.Load(HtmlReportXsltLocation);
+            var xslParams = new XsltArgumentList();
+            xslParams.AddParam("Date", "", DateTime.Now.ToLongDateString());
+
+            var outputFullPath = outputFileName == null
+                ? Path.Combine(outputPath, Path.GetFileNameWithoutExtension(xmlName) + "_" + DateTime.Now.ToString("dd-MM-yy_hh-mm-ss") + ".html")
+                : Path.Combine(outputPath, outputFileName);
+            if (!Directory.Exists(outputPath))
+                Directory.CreateDirectory(outputPath);
+
+            using (var writer = XmlWriter.Create(outputFullPath, new XmlWriterSettings { WriteEndDocumentOnClose = true }))
+            {
+                xsl.Transform(xmlPath, xslParams, writer);
+            }
+        }
+    }
+}
