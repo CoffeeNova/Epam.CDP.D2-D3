@@ -38,3 +38,7 @@ we can install service with several parameters:
 -filetype: type of output file, only .pdf supported for this moment;
 
 -attempt: attempt count to read image files before throw exception.
+
+06. Advanced Xml
+
+I've decided to realize this module as class library with single class for each task.
