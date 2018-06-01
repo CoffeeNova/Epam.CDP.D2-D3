@@ -55,10 +55,10 @@ namespace MessagingApi.AzureServiceBus
         {
             var queueClient = GetQueueClient();
             var result = await queueClient.ReceiveAsync();
-            var body = result.GetBody<TMessage>();
+            var body = result.GetBody<string>();
             await queueClient.CloseAsync();
 
-            return body;
+            return JsonConvert.DeserializeObject<TMessage>(body);
         }
 
         private CancellationTokenSource _cts;

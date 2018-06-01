@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ServiceProcess;
 using Newtonsoft.Json;
 
 namespace FileFormatter.Common
@@ -8,7 +9,7 @@ namespace FileFormatter.Common
         [JsonProperty("nodeName", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public string NodeName { get; set; }
         [JsonProperty("serviceStatus", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public ServiceStatus? ServiceStatus { get; set; }
+        public ServiceControllerStatus? ServiceStatus { get; set; }
         [JsonProperty("newPageTimeOut", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public int? NewPageTimeOut { get; set; }
         [JsonProperty("date", DefaultValueHandling = DefaultValueHandling.Ignore)]

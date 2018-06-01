@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,6 +22,7 @@ namespace FileFormatterService
         private readonly IServiceBusConfiguration _statusQueueConfig;
         private readonly IServiceBusConfiguration _controlQueueConfig;
         private readonly IFileFormatterSettingsExchanger _settingsExchanger;
+        private HostControl _hostControl;
 
         public FileFormatterService(IFileBuilderFactory fileBuilderFactory, IServiceBusConfiguration fileQueueConfig, IServiceBusConfiguration statusQueueConfig, IServiceBusConfiguration controlQueueConfig)
         {
@@ -41,10 +43,13 @@ namespace FileFormatterService
             FileType = FileType.Pdf;
             NewPageTimeOut = 4000;
 #endif
+
         }
 
         public bool Start(HostControl hostControl)
         {
+            _hostControl = hostControl;
+
             if (_status != ServiceStatus.Stopped)
                 return true;
             try
@@ -204,7 +209,7 @@ namespace FileFormatterService
         {
             return new FileFormatterSettings
             {
-                ServiceStatus = _status,
+                ServiceStatus = ServiceController.GetServices().FirstOrDefault(x => string.Equals(x.ServiceName, nameof(FileFormatterService)))?.Status,
                 NewPageTimeOut = NewPageTimeOut,
                 NodeName = NodeName,
                 Date = DateTime.Now
@@ -217,7 +222,25 @@ namespace FileFormatterService
                 NewPageTimeOut = settings.NewPageTimeOut.Value;
             //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
 
+            if (settings.ServiceStatus.HasValue)
+                ControlService(settings.ServiceStatus.Value);
+
             return Task.FromResult<object>(null);
+        }
+
+        private void ControlService(ServiceControllerStatus newStatus)
+        {
+            switch (newStatus)
+            {
+                case ServiceControllerStatus.Paused:
+                    Stop();
+                    break;
+                case ServiceControllerStatus.Stopped:
+                    _hostControl.Stop();
+                    break;
+                case ServiceControllerStatus.Running: //this is impossible in this case xD
+                    break;
+            }
         }
 
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();

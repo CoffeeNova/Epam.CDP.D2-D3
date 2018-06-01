@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using MessagingApi;
@@ -72,7 +73,7 @@ namespace FileFormatter.Common
             {
                 NewPageTimeOut = x.NewPageTimeout,
                 ServiceStatus = x.ServiceStatus != null
-                    ? (ServiceStatus?)Enum.Parse(typeof(ServiceStatus), x.ServiceStatus)
+                    ? (ServiceControllerStatus?)Enum.Parse(typeof(ServiceControllerStatus), x.ServiceStatus)
                     : null,
                 NodeName = x.NodeName,
                 Date = x.Date

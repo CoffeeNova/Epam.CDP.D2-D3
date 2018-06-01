@@ -36,12 +36,13 @@ namespace FileFormatterService
                 x =>
                 {
                     x.EnableStartParameters();
-
                     x.Service<FileFormatterService>(conf =>
                     {
                         conf.ConstructUsing(() => new FileFormatterService(new FileBuilderFactory(), fileQueueConf, statusQueueConf, controlQueueConf));
                         conf.WhenStarted((s, hostControl) => s.Start(hostControl));
                         conf.WhenStopped(s => s.Stop());
+                        conf.WhenPaused(s => s.Stop());
+                        conf.WhenContinued((s, hostControl) => s.Start(hostControl));
                     });
 
                     x.WithStartParameter("path", a =>
@@ -110,7 +111,7 @@ namespace FileFormatterService
                         FileFormatterService.NodeName = a;
                     });
 
-                    x.SetServiceName("FileFormatterService");
+                    x.SetServiceName(nameof(FileFormatterService));
                     x.SetDisplayName("File Formatter Service");
                     x.SetDescription("Service which glues images together in single file of the specified type");
                     x.StartAutomaticallyDelayed();

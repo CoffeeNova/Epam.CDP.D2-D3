@@ -24,7 +24,7 @@ namespace FileFormatterCentralService
 #if DEBUG
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
             OutputPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", OutputFolderName));
-            SystemFilesPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\"));
+            SystemFilesPath = Path.GetFullPath(Path.Combine(appDir, "..\\..\\..\\", SystemFilesFolderName));
             DefaultNewPageTimeout = 10;
 #endif
 
@@ -156,6 +156,7 @@ namespace FileFormatterCentralService
         public static int DefaultNewPageTimeout { get; set; } //in ms
 
         private const string OutputFolderName = "Output";
+        private const string SystemFilesFolderName = "SystemFiles";
         private const string ClientsSettingsFileName = "ClientsSettings.log";
         private const string FileFormatterConfigFileName = "FileFormatterConfig.json";
     }

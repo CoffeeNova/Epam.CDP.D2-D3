@@ -74,8 +74,9 @@ namespace MessagingApi.AzureServiceBus
             _subscrClient = SubscriptionClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.TopicName, Configuration.SubscriptionName);
             _subscrClient.OnMessageAsync(x =>
             {
-                var body = x.GetBody<TMessage>();
-                return messageHandler(body);
+                var body = x.GetBody<string>();
+                var messageItem = JsonConvert.DeserializeObject<TMessage>(body);
+                return messageHandler(messageItem);
             });
         }
 
