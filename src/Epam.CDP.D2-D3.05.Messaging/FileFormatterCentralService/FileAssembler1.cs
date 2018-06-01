@@ -20,7 +20,7 @@ namespace FileFormatterCentralService
             _messagesContainer = new Dictionary<string, FileMessageSequence>();
         }
 
-        public void StartAssebling(string savePath, IMessagesController messageController)
+        public void StartAssembling(string savePath, IMessagesController messageController)
         {
             _cts = new CancellationTokenSource();
             Task.Run(async () =>
@@ -43,14 +43,21 @@ namespace FileFormatterCentralService
 
                         foreach (var assembledSequence in _messagesContainer.Values.Where(x => x.IsAssembled))
                         {
-                            var body = assembledSequence.CollectBody();
-                            var bodyChecksum = Helper.ComputeChecksum(body);
-                            if (!string.Equals(assembledSequence.FileChecksum, bodyChecksum, StringComparison.Ordinal))
-                                continue;
-
-                            using (var fs = File.Create(Path.Combine(savePath, assembledSequence.FileName), body.Length, FileOptions.Asynchronous))
+                            var orderedSequence = assembledSequence.Messages
+                                .OrderBy(y => y.Id)
+                                .ToList();
+                            using (var fs = new FileStream(Path.Combine(savePath, assembledSequence.FileName), FileMode.Create))
                             {
-                                await fs.WriteAsync(body, 0, body.Length);
+                                var offset = 0;
+                                foreach (var item in orderedSequence)
+                                {
+                                    await fs.WriteAsync(item.Body, offset, item.Body.Length);
+                                }
+
+                                var bodyChecksum = Helper.ComputeChecksum(fs);
+                                if (!string.Equals(assembledSequence.FileChecksum, bodyChecksum, StringComparison.Ordinal))
+                                    continue;
+
                                 await fs.FlushAsync();
                             }
                         }
@@ -68,7 +75,7 @@ namespace FileFormatterCentralService
             }, _cts.Token);
         }
 
-        public void StopAssebling()
+        public void StopAssembling()
         {
             if (_cts != null)
             {

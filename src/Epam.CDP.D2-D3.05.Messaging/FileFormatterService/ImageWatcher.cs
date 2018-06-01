@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Timers;
+using Common;
 
 namespace FileFormatterService
 {
@@ -13,10 +14,9 @@ namespace FileFormatterService
         private readonly Timer _timer;
         private readonly List<FileSystemWatcher> _watchers;
 
-        public ICollection<string> ImageExtensions { get; set; }
-
-        public ImageWatcher(ICollection<string> monitoringPaths, int newPageTimeout)
+        public ImageWatcher(ICollection<string> monitoringPaths, int newPageTimeout, ICollection<string> extensions)
         {
+            ImageExtensions = extensions;
             NewPageTimeout = newPageTimeout;
             _imagesNames = new List<string>();
             _timer = new Timer
@@ -36,6 +36,23 @@ namespace FileFormatterService
                 watcher.WatcherSettings(Watcher_Created, Watcher_Error);
                 _watchers.Add(watcher);
             }
+        }
+
+        public void CheckDirectoriesForNewImages()
+        {
+            _watchers.ForEach(w =>
+            {
+                var dir = new DirectoryInfo(w.Path);
+                var files = dir.GetFilesByExtensions(ImageExtensions?.ToArray())
+                    .OrderBy(f => f.CreationTime) //order by creation time to reproduce queue
+                    .ToList();
+
+                foreach (var file in files)
+                {
+                    var fsEventArgs = new FileSystemEventArgs(WatcherChangeTypes.Created, w.Path, file.Name);
+                    Watcher_Created(this, fsEventArgs);
+                }
+            });
         }
 
         public delegate void EndOfFileEventHandler(string[] imagesPaths);
@@ -95,6 +112,7 @@ namespace FileFormatterService
         private bool ImageFilter(string fileName) => Regex.IsMatch(fileName, ImageNamePattern, RegexOptions.IgnoreCase);
         private readonly object _locker = new object();
 
+        public ICollection<string> ImageExtensions { get; set; }
         public int NewPageTimeout { get; set; }
 
         public void Dispose()

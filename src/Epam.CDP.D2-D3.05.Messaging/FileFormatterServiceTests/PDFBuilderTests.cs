@@ -24,24 +24,14 @@ namespace FileFormatterServiceTests
         [TestInitialize]
         public void TestInitialize()
         {
-            switch (TestContext.TestName)
-            {
-                case nameof(Should_Throw_Exception_When_File_Locked):
-                    _file = File.Open(_imageName, FileMode.Open);
-                    break;
-            }
+            _file = File.Open(_imageName, FileMode.Open);
         }
 
         [TestCleanup]
         public void CleanUp()
         {
-            switch (TestContext.TestName)
-            {
-                case nameof(Should_Throw_Exception_When_File_Locked):
-                    _file.Close();
-                    _file.Dispose();
-                    break;
-            }
+            _file.Close();
+            _file.Dispose();
         }
 
         [TestMethod, ExpectedException(typeof(OutOfMemoryException))]

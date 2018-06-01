@@ -20,14 +20,14 @@ namespace FileFormatterCentralService
             _messagesContainer = new Dictionary<string, FileMessageSequence>();
         }
 
-        public void StartAssebling(string savePath, IMessagesController messageController)
+        public void StartAssembling(string savePath, IMessagesController messageController)
         {
             _messageController = messageController;
             _savePath = savePath;
             Task.Run(async () => { await _messageController.SubscribeToQueueAsync(MessageHandler()); });
         }
 
-        public void StopAssebling()
+        public void StopAssembling()
         {
             _messageController.UnSubscribeFromQueueAsync().Wait();
             _messageController = null;
@@ -47,14 +47,21 @@ namespace FileFormatterCentralService
 
                 foreach (var assembledSequence in _messagesContainer.Values.Where(x => x.IsAssembled))
                 {
-                    var body = assembledSequence.CollectBody();
-                    var bodyChecksum = Helper.ComputeChecksum(body);
-                    if (!string.Equals(assembledSequence.FileChecksum, bodyChecksum, StringComparison.Ordinal))
-                        continue;
-
-                    using (var fs = File.Create(Path.Combine(_savePath, assembledSequence.FileName), body.Length, FileOptions.Asynchronous))
+                    var orderedSequence = assembledSequence.Messages
+                        .OrderBy(y => y.Id)
+                        .ToList();
+                    using (var fs = new FileStream(Path.Combine(_savePath, assembledSequence.FileName), FileMode.Create))
                     {
-                        await fs.WriteAsync(body, 0, body.Length);
+                        var offset = 0;
+                        foreach (var item in orderedSequence)
+                        {
+                            await fs.WriteAsync(item.Body, offset, item.Body.Length);
+                        }
+
+                        var bodyChecksum = Helper.ComputeChecksum(fs);
+                        if (!string.Equals(assembledSequence.FileChecksum, bodyChecksum, StringComparison.Ordinal))
+                            continue;
+
                         await fs.FlushAsync();
                     }
                 }

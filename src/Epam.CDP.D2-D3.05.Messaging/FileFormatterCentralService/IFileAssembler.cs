@@ -4,7 +4,7 @@ namespace FileFormatterCentralService
 {
     public interface IFileAssembler
     {
-        void StartAssebling(string savePath, IMessagesController messageController);
-        void StopAssebling();
+        void StartAssembling(string savePath, IMessagesController messageController);
+        void StopAssembling();
     }
 }

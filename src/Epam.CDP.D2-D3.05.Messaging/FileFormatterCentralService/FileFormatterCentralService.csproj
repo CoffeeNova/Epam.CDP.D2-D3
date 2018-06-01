@@ -59,7 +59,6 @@
     <Compile Include="FileAssembler2.cs" />
     <Compile Include="FileFormatterCentralService.cs" />
     <Compile Include="IFileAssembler.cs" />
-    <Compile Include="FileMessageSequence.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Common;
 
 namespace FileFormatter.Common
 {
@@ -16,9 +18,30 @@ namespace FileFormatter.Common
             FileChecksum = message.FileChecksum;
         }
 
-        public byte[] CollectBody()
+        public static FileMessageItem[] BuildFileMessageItems(Stream stream, string fileName, int maxBodySize)
         {
-            return Messages.OrderBy(y => y.Id).SelectMany(y => y.Body).ToArray();
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            var arr = stream.StreamToIEnumerable();
+            var splittedByLength = arr.DivideByLength(maxBodySize).ToList();
+            var guid = Guid.NewGuid().ToString();
+            var checksum = Helper.ComputeChecksum(stream);
+
+            return splittedByLength.Select((x, i) =>
+            {
+                var body = x.ToArray();
+                return new FileMessageItem
+                {
+                    Id = i,
+                    Body = body,
+                    SequenceId = guid,
+                    FileName = fileName,
+                    FileChecksum = checksum,
+                    FileSize = stream.Length,
+                    SequenceCount = splittedByLength.Count
+                };
+            }).ToArray();
         }
 
         private readonly int _sequenceTtl;

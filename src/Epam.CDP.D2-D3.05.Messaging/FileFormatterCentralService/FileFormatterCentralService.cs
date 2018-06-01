@@ -46,7 +46,7 @@ namespace FileFormatterCentralService
                 return true;
             }
 
-            _fileAssembler.StartAssebling(OutputPath, _fileQueueController);
+            _fileAssembler.StartAssembling(OutputPath, _fileQueueController);
 
             _settingsExchanger.SubscribeToSettingsSender(GetSettingsFromFile, _controlQueueConfig);
             _settingsExchanger.SubscribeToSettingsReceiver(OnReceiveSettingsFromClients, _statusQueueConfig);
@@ -60,7 +60,7 @@ namespace FileFormatterCentralService
             if (_state == ServiceState.Stopped)
                 return;
 
-            _fileAssembler.StopAssebling();
+            _fileAssembler.StopAssembling();
             _settingsExchanger.UnSubscribeFromSettingsSender();
             _settingsExchanger.UnSubscribeFromSettingsReceiver();
 

@@ -17,11 +17,9 @@ namespace FileFormatterService
 
         public static void CreateImageWatcher(out ImageWatcher watcher, ICollection<string> imageExtensions, ICollection<string> monitoringPaths, int newPageTimeout, ImageWatcher.EndOfFileEventHandler endOfFileEventHandler)
         {
-            watcher = new ImageWatcher(monitoringPaths, newPageTimeout)
-            {
-                ImageExtensions = imageExtensions
-            };
+            watcher = new ImageWatcher(monitoringPaths, newPageTimeout, imageExtensions);
             watcher.EndOfFileEventDetected += endOfFileEventHandler;
+            watcher.CheckDirectoriesForNewImages();
         }
 
         public static void DisposeImageWatcher(ref ImageWatcher watcher, ImageWatcher.EndOfFileEventHandler endOfFileEventHandler)
@@ -32,6 +30,7 @@ namespace FileFormatterService
             if (endOfFileEventHandler != null)
                 watcher.EndOfFileEventDetected -= endOfFileEventHandler;
             watcher.Dispose();
+            watcher = null;
         }
 
     }

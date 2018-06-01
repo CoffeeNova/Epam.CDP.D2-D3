@@ -65,7 +65,7 @@ namespace FileFormatter.Common
         public async Task SubscribeToSettingsReceiver(Func<FileFormatterSettings, Task> onReceiveSettings, IServiceBusConfiguration configuration)
         {
             _receiverQueueController = new AzureMessagesTopicController(configuration);
-            if (!_receiverQueueController.QueueExist().GetAwaiter().GetResult())
+            if (!await _receiverQueueController.QueueExist())
                 throw new InvalidOperationException($"Wrong configuration '{configuration.ConfigurationName}' or queue doesn't exist.");
 
             await Task.Run(async () => await _receiverQueueController.SubscribeToQueueAsync<SettingsMessageItem>(x => onReceiveSettings(new FileFormatterSettings

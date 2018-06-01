@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.ServiceBus;
 
 namespace MessagingApi.AzureServiceBus
 {
@@ -11,6 +12,8 @@ namespace MessagingApi.AzureServiceBus
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
+
+        protected NamespaceManager GetNamespaceManager() => NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
 
         public abstract Task<bool> QueueExist();
         public abstract Task CreateQueueAsync();

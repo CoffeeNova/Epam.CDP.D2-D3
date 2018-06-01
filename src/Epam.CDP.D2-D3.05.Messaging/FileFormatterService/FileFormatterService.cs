@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Common;
 using FileFormatter.Common;
 using FileFormatterService.Exceptions;
 using MessagingApi.AzureServiceBus;
@@ -15,7 +14,7 @@ namespace FileFormatterService
 {
     public class FileFormatterService
     {
-        private ImageWatcher _imageWatcher;
+        private static ImageWatcher _imageWatcher;
         private ServiceStatus _status;
         private readonly IFileBuilderFactory _fileBuilderFactory;
         private readonly IServiceBusConfiguration _fileQueueConfig;
@@ -50,7 +49,6 @@ namespace FileFormatterService
                 return true;
             try
             {
-                CheckDirectoriesForNewData();
                 ImageWatcherHelper.CreateImageWatcher(out _imageWatcher, ImageExtensions.ToList(), MonitoringPaths, NewPageTimeOut, _imageWatcher_EndOfFileEventDetected);
 
                 _settingsExchanger.SubscribeToSettingsSender(GetCurrentServiceSettings, _statusQueueConfig);
@@ -80,54 +78,53 @@ namespace FileFormatterService
             _status = ServiceStatus.Stopped;
         }
 
-        private void CheckDirectoriesForNewData()
-        {
-            var sourceFilePaths = new List<string>();
-            foreach (var path in MonitoringPaths)
-            {
-                if (!Directory.Exists(path))
-                {
-                    var message = $"Directory '{path}' was not found.";
-                    //EventLog.WriteEntry(ServiceHelper.GetServiceName(), message, EventLogEntryType.Error);
-                    throw new DirectoryNotFoundException(message);
-                }
-
-                var dir = new DirectoryInfo(path);
-                var files = dir.GetFilesByExtensions(ImageExtensions);
-                sourceFilePaths.AddRange(files.Select(x => x.FullName));
-            }
-
-            if (sourceFilePaths.Any())
-            {
-                TryBuildAndSendFilesWithAttempt(sourceFilePaths.ToArray());
-            }
-        }
-
         private void TryBuildAndSendFilesWithAttempt(string[] sourceFiles)
         {
+            var actionResult = TryDoActionWithAttempts(() =>
+             {
+                 using (var stream = new MemoryStream())
+                 {
+                     BuildFile(sourceFiles, stream, out var fileName);
+                     SendFileToCentralServer(stream, fileName);
+                 }
+             }, out var exception);
+            if (!actionResult && exception is BuildFileException)
+            {
+                TryDoActionWithAttempts(() =>
+                {
+                    TryMoveFilesToDamagedFolder(sourceFiles);
+                }, out exception);
+            }
+            else
+                TryDoActionWithAttempts(() =>
+                {
+                    CleanSourceFiles(sourceFiles);
+                }, out exception);
+        }
+
+        private static bool TryDoActionWithAttempts(Action action, out Exception exception)
+        {
             var attempt = AttemptCount;
+            Exception localEx = null;
             while (attempt > 0)
             {
                 try
                 {
-                    using (var stream = new MemoryStream())
-                    {
-                        BuildFile(sourceFiles, stream, out var fileName);
-                        SendFileToCentralServer(stream, fileName);
-                        CleanSourceFiles(sourceFiles);
-                    }
-                    attempt = 0;
+                    action();
+                    exception = null;
+                    return true;
                 }
-                catch (BuildFileException)
-                {
-                    TryMoveFilesToDamagedFolder(sourceFiles);
-                }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     attempt--;
                     Thread.Sleep(2000);
+                    if (attempt == 0)
+                        localEx = ex;
                 }
             }
+
+            exception = localEx;
+            return false;
         }
 
         private void BuildFile(string[] imagesPaths, MemoryStream stream, out string fileName)
@@ -151,7 +148,7 @@ namespace FileFormatterService
 
         private void SendFileToCentralServer(MemoryStream stream, string fileName)
         {
-            var messageSequence = FileMessageItem.BuildFileMessageSequence(stream, fileName, MaxMessagesSize);
+            var messageSequence = FileMessageSequence.BuildFileMessageItems(stream, fileName, MaxMessagesSize);
             var fileMessagesController = new AzureMessagesQueueController(_fileQueueConfig);
             fileMessagesController.SendMessagesAsync(messageSequence).GetAwaiter().GetResult();
         }
@@ -218,14 +215,26 @@ namespace FileFormatterService
         {
             if (settings.NewPageTimeOut.HasValue)
                 NewPageTimeOut = settings.NewPageTimeOut.Value;
-                //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
+            //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
 
             return Task.FromResult<object>(null);
         }
 
         public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();
 
-        public static int NewPageTimeOut { get; set; } = 10000;
+        private static int _newPageTimeOut = 1000;
+        public static int NewPageTimeOut
+        {
+            get => _newPageTimeOut;
+
+            set
+            {
+                if (_imageWatcher != null)
+                    _imageWatcher.NewPageTimeout = value;
+
+                _newPageTimeOut = value;
+            }
+        }
 
         public static FileType FileType { get; set; }
 

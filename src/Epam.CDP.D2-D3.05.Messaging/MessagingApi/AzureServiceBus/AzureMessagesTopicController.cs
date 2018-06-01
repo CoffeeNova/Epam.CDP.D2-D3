@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 
@@ -14,13 +13,13 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task<bool> QueueExist()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             return await manager.TopicExistsAsync(Configuration.TopicName);
         }
 
         public override async Task CreateQueueAsync()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             if (!await manager.TopicExistsAsync(Configuration.TopicName))
             {
                 var topicDescription = new TopicDescription(Configuration.TopicName)
@@ -33,7 +32,7 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task DeleteQueueAsync()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             if (await manager.TopicExistsAsync(Configuration.TopicName))
             {
                 await manager.DeleteTopicAsync(Configuration.TopicName);
@@ -42,7 +41,7 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task SendMessagesAsync<TMessage>(TMessage[] messages)
         {
-            var topicClient = TopicClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.TopicName);
+            var topicClient = GetTopicClient();
             foreach (var message in messages)
             {
                 await topicClient.SendAsync(new BrokeredMessage(JsonConvert.SerializeObject(message)));
@@ -56,14 +55,13 @@ namespace MessagingApi.AzureServiceBus
             throw new NotImplementedException();
         }
 
-
         private SubscriptionClient _subscrClient;
         public override async Task SubscribeToQueueAsync<TMessage>(Func<TMessage, Task> messageHandler)
         {
             if (_subscrClient != null && !_subscrClient.IsClosed)
                 throw new InvalidOperationException("Already subscribed. Please unsubscribe first.");
 
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             if (!await manager.SubscriptionExistsAsync(Configuration.TopicName, Configuration.SubscriptionName))
             {
                 var subscrDescr = new SubscriptionDescription(Configuration.TopicName, Configuration.SubscriptionName)
@@ -76,9 +74,8 @@ namespace MessagingApi.AzureServiceBus
             _subscrClient = SubscriptionClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.TopicName, Configuration.SubscriptionName);
             _subscrClient.OnMessageAsync(x =>
             {
-                var body = x.GetBody<string>();
-                var messageItem = JsonConvert.DeserializeObject<TMessage>(body);
-                return messageHandler(messageItem);
+                var body = x.GetBody<TMessage>();
+                return messageHandler(body);
             });
         }
 
@@ -87,11 +84,13 @@ namespace MessagingApi.AzureServiceBus
             if (_subscrClient != null && !_subscrClient.IsClosed)
                 await _subscrClient.CloseAsync();
 
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             if (await manager.SubscriptionExistsAsync(Configuration.TopicName, Configuration.SubscriptionName))
             {
                 await manager.DeleteSubscriptionAsync(Configuration.TopicName, Configuration.SubscriptionName);
             }
         }
+
+        private TopicClient GetTopicClient() => TopicClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.TopicName);
     }
 }

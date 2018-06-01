@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 
@@ -15,13 +14,13 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task<bool> QueueExist()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             return await manager.QueueExistsAsync(Configuration.TopicName);
         }
 
         public override async Task CreateQueueAsync()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             if (!await manager.QueueExistsAsync(Configuration.QueueName))
             {
                 var queueDescription = new QueueDescription(Configuration.QueueName)
@@ -34,7 +33,7 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task DeleteQueueAsync()
         {
-            var manager = NamespaceManager.CreateFromConnectionString(Configuration.ConnectionString);
+            var manager = GetNamespaceManager();
             if (await manager.QueueExistsAsync(Configuration.QueueName))
             {
                 await manager.DeleteQueueAsync(Configuration.QueueName);
@@ -43,7 +42,7 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task SendMessagesAsync<TMessage>(TMessage[] messages)
         {
-            var queueClient = QueueClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.QueueName, ReceiveMode.ReceiveAndDelete);
+            var queueClient = GetQueueClient();
             foreach (var message in messages)
             {
                 await queueClient.SendAsync(new BrokeredMessage(JsonConvert.SerializeObject(message)));
@@ -54,12 +53,12 @@ namespace MessagingApi.AzureServiceBus
 
         public override async Task<TMessage> RecieveMessageAsync<TMessage>()
         {
-            var queueClient = QueueClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.QueueName, ReceiveMode.ReceiveAndDelete);
+            var queueClient = GetQueueClient();
             var result = await queueClient.ReceiveAsync();
-            var body = result.GetBody<string>();
+            var body = result.GetBody<TMessage>();
             await queueClient.CloseAsync();
 
-            return JsonConvert.DeserializeObject<TMessage>(body);
+            return body;
         }
 
         private CancellationTokenSource _cts;
@@ -83,5 +82,7 @@ namespace MessagingApi.AzureServiceBus
 
             return Task.FromResult(0);
         }
+
+        private QueueClient GetQueueClient() => QueueClient.CreateFromConnectionString(Configuration.ConnectionString, Configuration.QueueName, ReceiveMode.ReceiveAndDelete);
     }
 }
