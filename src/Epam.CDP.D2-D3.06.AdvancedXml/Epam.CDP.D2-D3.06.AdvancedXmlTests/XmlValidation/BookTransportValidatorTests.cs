@@ -52,7 +52,7 @@ namespace Epam.CDP.D2_D3._06.AdvancedXmlTests.XmlValidation
 
             // assert
             Assert.IsFalse(result);
-            Assert.AreEqual(2, errors.Length);
+            Assert.AreEqual(4, errors.Length);
 
         }
 
@@ -69,7 +69,21 @@ namespace Epam.CDP.D2_D3._06.AdvancedXmlTests.XmlValidation
             // assert
             Assert.IsFalse(result);
             Assert.AreEqual(3, errors.Length);
+        }
 
+        [TestMethod]
+        public void Should_Detect_Not_Unique_Ids()
+        {
+            // arrange
+            var validator = new BookTransportValidator();
+            var xmlPath = ReturnXmlFullPath("books_not_unique_id.xml", XmlValidation);
+
+            // act
+            var result = validator.ValidateXmlFile(xmlPath, out var errors);
+
+            // assert
+            Assert.IsFalse(result);
+            Assert.AreEqual(2, errors.Length);
         }
     }
 }

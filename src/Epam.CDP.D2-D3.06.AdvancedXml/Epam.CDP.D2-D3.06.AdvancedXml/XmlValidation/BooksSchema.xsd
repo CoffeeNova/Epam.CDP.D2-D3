@@ -30,7 +30,7 @@
     </xs:simpleType>
 
     <xs:simpleType name="dateType" >
-        <xs:restriction base="xs:string">
+        <xs:restriction base="xs:date">
             <xs:pattern value="\d{4}-\d{2}-\d{2}">
             </xs:pattern>
         </xs:restriction>
@@ -45,7 +45,7 @@
             <xs:element name="publisher" type="xs:string"/>
             <xs:element name="publish_date" type="dateType"/>
             <xs:element name="description" type="xs:string"/>
-            <xs:element name="registration_date" type="xs:date"/>
+            <xs:element name="registration_date" type="dateType"/>
         </xs:all>
         <xs:attribute name="id" type="xs:string" use="required" />
     </xs:complexType>

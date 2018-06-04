@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Schema;
@@ -22,15 +24,15 @@ namespace Epam.CDP.D2_D3._06.AdvancedXml.XmlValidation
             _settings.ValidationType = ValidationType.Schema;
         }
 
-        private void ValidationEventHandler(ref StringBuilder errorBuilder, object sender, ValidationEventArgs e)
+        private void ValidationEventHandler(ICollection<string> errors, object sender, ValidationEventArgs e)
         {
+            if (errors == null)
+                throw new ArgumentNullException(nameof(errors));
+
             if (sender is XmlReader)
             {
                 var errorMsg = $"{e.Message} Line number:{e.Exception.LineNumber}. Line position:{e.Exception.LinePosition}";
-                if (errorBuilder.Length > 0)
-                    errorBuilder.AppendLine(errorMsg);
-                else
-                    errorBuilder.Append(errorMsg);
+                errors.Add(errorMsg);
             }
         }
 
@@ -52,17 +54,17 @@ namespace Epam.CDP.D2_D3._06.AdvancedXml.XmlValidation
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"XML file with name: {xmlName} was not found.");
 
-            var errorBuilder = new StringBuilder();
-            _settings.ValidationEventHandler += (sender, e) => ValidationEventHandler(ref errorBuilder, sender, e);
+            var errColl = new List<string>();
+            _settings.ValidationEventHandler += (sender, e) => ValidationEventHandler(errColl, sender, e);
 
             using (var reader = XmlReader.Create(filePath, _settings))
             {
                 while (reader.Read()) { }
             }
 
-            if (errorBuilder.Length > 0)
+            if (errColl.Any())
             {
-                errors = errorBuilder.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+                errors = errColl.ToArray();
                 return false;
             }
 

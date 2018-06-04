@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<catalog xmlns="http://library.by/catalog/">
+<catalog xmlns="http://library.by/catalog">
     <book id="bk101">
         <isbn>0-596-00103-7</isbn>
         <author>Löwy, Juval</author>
@@ -14,7 +14,7 @@
         </description>
         <registration_date>2016-01-05</registration_date>
     </book>
-    <book id="bk102">
+    <book id="bk101">
         <author>Ralls, Kim</author>
         <title>Midnight Rain</title>
         <genre>Fantasy</genre>
@@ -103,7 +103,7 @@
         </description>
         <registration_date>2011-01-05</registration_date>
     </book>
-    <book id="bk109">
+    <book id="bk101">
         <author>Kress, Peter</author>
         <title>Paradox Lost</title>
         <genre>Science Fiction</genre>

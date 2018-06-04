@@ -36,7 +36,7 @@
     </xsl:template>
 
     <xsl:template match="x:catalog">
-        <rss version="2.0">
+        <rss xmlns="http://library.by/catalog" version="2.0">
             <channel>
                 <xsl:attribute name="transformDate">
                     <xsl:value-of select="$Date"/>
