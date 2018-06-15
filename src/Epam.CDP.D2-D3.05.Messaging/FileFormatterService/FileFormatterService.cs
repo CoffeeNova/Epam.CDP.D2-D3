@@ -7,33 +7,40 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using FileFormatter.Common;
+using FileFormatter.Common.ServiceBusConfiguration;
 using FileFormatterService.Exceptions;
 using MessagingApi.AzureServiceBus;
 using Topshelf;
 
 namespace FileFormatterService
 {
-    public class FileFormatterService
+    internal class FileFormatterService : IFileFormatterService
     {
-        private static ImageWatcher _imageWatcher;
         private ServiceStatus _status;
         private readonly IFileBuilderFactory _fileBuilderFactory;
+        private readonly IFileFormatterSettingsExchanger _settingsExchanger;
+        private readonly IImageWatcherFactory _imageWatcherFactory;
+
+        private HostControl _hostControl;
         private readonly IServiceBusConfiguration _fileQueueConfig;
         private readonly IServiceBusConfiguration _statusQueueConfig;
         private readonly IServiceBusConfiguration _controlQueueConfig;
-        private readonly IFileFormatterSettingsExchanger _settingsExchanger;
-        private HostControl _hostControl;
+        private IImageWatcher _imageWatcher;
 
-        public FileFormatterService(IFileBuilderFactory fileBuilderFactory, IServiceBusConfiguration fileQueueConfig, IServiceBusConfiguration statusQueueConfig, IServiceBusConfiguration controlQueueConfig)
+        public FileFormatterService(
+            IFileBuilderFactory fileBuilderFactory,
+            IServiceBusConfigurationFactory serviceBusConfigurationFactory,
+            IFileFormatterSettingsExchanger settingsExchanger,
+            IImageWatcherFactory imageWatcherFactrory)
         {
             _fileBuilderFactory = fileBuilderFactory;
-            _fileQueueConfig = fileQueueConfig;
-            _statusQueueConfig = statusQueueConfig;
-            _controlQueueConfig = controlQueueConfig;
-
+            _fileQueueConfig = serviceBusConfigurationFactory.CreateByType(SbConfigType.FileQueue);
+            _statusQueueConfig = serviceBusConfigurationFactory.CreateByType(SbConfigType.StatusQueue);
+            _controlQueueConfig = serviceBusConfigurationFactory.CreateByType(SbConfigType.ControlQueue);
             _controlQueueConfig.SubscriptionName = NodeName;
 
-            _settingsExchanger = new FileFormatterSettingsExchanger();
+            _settingsExchanger = settingsExchanger;
+            _imageWatcherFactory = imageWatcherFactrory;
 
 #if DEBUG
             var appDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -54,7 +61,8 @@ namespace FileFormatterService
                 return true;
             try
             {
-                ImageWatcherHelper.CreateImageWatcher(out _imageWatcher, ImageExtensions.ToList(), MonitoringPaths, NewPageTimeOut, _imageWatcher_EndOfFileEventDetected);
+                _imageWatcherFactory.Create(out _imageWatcher, _imageWatcher_EndOfFileEventDetected);
+                _imageWatcher.WatchDirectories(MonitoringPaths, ImageExtensions, NewPageTimeOut);
 
                 _settingsExchanger.SubscribeToSettingsSender(GetCurrentServiceSettings, _statusQueueConfig);
                 _settingsExchanger.SubscribeToSettingsReceiver(OnReceiveNewSettings, _controlQueueConfig);
@@ -107,7 +115,7 @@ namespace FileFormatterService
                 }, out exception);
         }
 
-        private static bool TryDoActionWithAttempts(Action action, out Exception exception)
+        private bool TryDoActionWithAttempts(Action action, out Exception exception)
         {
             var attempt = AttemptCount;
             Exception localEx = null;
@@ -219,7 +227,10 @@ namespace FileFormatterService
         private Task OnReceiveNewSettings(FileFormatterSettings settings)
         {
             if (settings.NewPageTimeOut.HasValue)
+            {
                 NewPageTimeOut = settings.NewPageTimeOut.Value;
+                _imageWatcher.NewPageTimeout = settings.NewPageTimeOut.Value;
+            }
             //here we can save this settings to the registry by path Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\FileFormatterService
 
             if (settings.ServiceStatus.HasValue)
@@ -243,34 +254,22 @@ namespace FileFormatterService
             }
         }
 
-        public static ICollection<string> MonitoringPaths { get; set; } = new List<string>();
+        public ICollection<string> MonitoringPaths { get; set; } = new List<string>();
 
-        private static int _newPageTimeOut = 1000;
-        public static int NewPageTimeOut
-        {
-            get => _newPageTimeOut;
+        public int NewPageTimeOut { get; set; }
 
-            set
-            {
-                if (_imageWatcher != null)
-                    _imageWatcher.NewPageTimeout = value;
+        public FileType FileType { get; set; }
 
-                _newPageTimeOut = value;
-            }
-        }
+        public string DamagedPath { get; set; }
 
-        public static FileType FileType { get; set; }
-
-        public static string DamagedPath { get; set; }
-
-        public static int AttemptCount { get; set; } = 3;
+        public int AttemptCount { get; set; } = 3;
 
         /// <summary>
         /// Max messages size in bytes
         /// </summary>
-        public static int MaxMessagesSize { get; set; } = 64 * 1024;
+        public int MaxMessagesSize { get; set; } = 64 * 1024;
 
-        public static string NodeName { get; set; } = "node1";
+        public string NodeName { get; set; } = "node1";
 
         private string[] ImageExtensions => new[] { Constants.FileExtension.Jpg, Constants.FileExtension.Png };
     }
