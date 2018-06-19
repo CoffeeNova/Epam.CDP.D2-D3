@@ -78,7 +78,7 @@
 .stackreserve 0x00100000
 .subsystem 0x0002       // WINDOWS_GUI
 .corflags 0x00020003    //  ILONLY 32BITPREFERRED
-// Image base: 0x00D40000
+// Image base: 0x03040000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -223,6 +223,8 @@
              class [PresentationFramework]System.Windows.Controls.TextBox V_9,
              bool V_10,
              bool V_11)
+	.try
+	{
     IL_0000:  nop
     IL_0001:  ldc.i4.0
     IL_0002:  stloc.1
@@ -441,7 +443,18 @@
     IL_0215:  callvirt   instance void [PresentationFramework]System.Windows.Controls.TextBox::set_Text(string)
     IL_021a:  nop
     IL_021b:  nop
-    IL_021c:  ret
+	IL_021c:  leave.s IL_0227
+	}
+	catch [mscorlib]System.Object
+	{
+		IL_021d: ldarg.0
+		IL_021e: ldfld class [PresentationFramework]System.Windows.Controls.TextBox MyCalculatorv1.MainWindow::tb
+		IL_0221: ldstr "error"
+		IL_0224: callvirt instance void [PresentationFramework]System.Windows.Controls.TextBox::set_Text(string)
+		IL_0225: nop
+		IL_0226: leave.s IL_0227
+	}
+    IL_0227:  ret
   } // end of method MainWindow::result
 
   .method private hidebysig instance void 
@@ -967,4 +980,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file MyCalculator.exe.res
+// WARNING: Created Win32 resource file MyCalculator.res
