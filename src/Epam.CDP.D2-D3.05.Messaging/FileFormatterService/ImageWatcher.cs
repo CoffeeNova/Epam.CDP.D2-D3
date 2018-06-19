@@ -5,28 +5,43 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Timers;
 using Common;
+using FileFormatter.Common;
 
 namespace FileFormatterService
 {
-    internal class ImageWatcher : IDisposable
+    public delegate void EndOfFileEventHandler(string[] imagesPaths);
+
+    internal class ImageWatcher : IImageWatcher
     {
         private readonly List<string> _imagesNames;
         private readonly Timer _timer;
-        private readonly List<FileSystemWatcher> _watchers;
+        private List<FileSystemWatcher> _watchers;
 
-        public ImageWatcher(ICollection<string> monitoringPaths, int newPageTimeout, ICollection<string> extensions)
+        public ImageWatcher()
         {
-            ImageExtensions = extensions;
-            NewPageTimeout = newPageTimeout;
             _imagesNames = new List<string>();
             _timer = new Timer
             {
-                Interval = NewPageTimeout,
-                AutoReset = false,
+                AutoReset = false
             };
-            _timer.Elapsed += _timer_Elapsed;
+        }
 
-            _watchers = new List<FileSystemWatcher>();
+        private bool _isSubscribedToTimerEvent;
+
+        [UniversalOnMethodBoundaryAspect]
+        public void WatchDirectories(ICollection<string> monitoringPaths, ICollection<string> extensions, int newPageTimeout = 10)
+        {
+            ImageExtensions = extensions;
+            NewPageTimeout = newPageTimeout;
+            if (!_isSubscribedToTimerEvent)
+            {
+                _timer.Elapsed += _timer_Elapsed;
+                _isSubscribedToTimerEvent = true;
+            }
+
+            if (_watchers == null)
+                _watchers = new List<FileSystemWatcher>();
+
             foreach (var path in monitoringPaths)
             {
                 if (!Directory.Exists(path))
@@ -38,9 +53,10 @@ namespace FileFormatterService
             }
         }
 
+        [UniversalOnMethodBoundaryAspect]
         public void CheckDirectoriesForNewImages()
         {
-            _watchers.ForEach(w =>
+            _watchers?.ForEach(w =>
             {
                 var dir = new DirectoryInfo(w.Path);
                 var files = dir.GetFilesByExtensions(ImageExtensions?.ToArray())
@@ -55,7 +71,6 @@ namespace FileFormatterService
             });
         }
 
-        public delegate void EndOfFileEventHandler(string[] imagesPaths);
 
         public event EndOfFileEventHandler EndOfFileEventDetected;
 
@@ -113,7 +128,21 @@ namespace FileFormatterService
         private readonly object _locker = new object();
 
         public ICollection<string> ImageExtensions { get; set; }
-        public int NewPageTimeout { get; set; }
+
+        private int _newPageTimeout = 1000;
+        public int NewPageTimeout
+        {
+            get => _newPageTimeout;
+            set
+            {
+                if (value <= 0)
+                    throw new ArgumentException("New page timeout should be more than 0");
+
+                _newPageTimeout = value;
+                if (_timer != null)
+                    _timer.Interval = value;
+            }
+        }
 
         public void Dispose()
         {

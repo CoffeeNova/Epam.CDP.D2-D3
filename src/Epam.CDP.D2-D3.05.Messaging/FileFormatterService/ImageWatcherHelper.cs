@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 
 namespace FileFormatterService
 {
@@ -15,14 +14,14 @@ namespace FileFormatterService
             watcher.Error += onError;
         }
 
-        public static void CreateImageWatcher(out ImageWatcher watcher, ICollection<string> imageExtensions, ICollection<string> monitoringPaths, int newPageTimeout, ImageWatcher.EndOfFileEventHandler endOfFileEventHandler)
+        public static void CreateImageWatcher(out IImageWatcher watcher, EndOfFileEventHandler endOfFileEventHandler)
         {
-            watcher = new ImageWatcher(monitoringPaths, newPageTimeout, imageExtensions);
+            watcher = new ImageWatcher();
             watcher.EndOfFileEventDetected += endOfFileEventHandler;
             watcher.CheckDirectoriesForNewImages();
         }
 
-        public static void DisposeImageWatcher(ref ImageWatcher watcher, ImageWatcher.EndOfFileEventHandler endOfFileEventHandler)
+        public static void DisposeImageWatcher(ref IImageWatcher watcher, EndOfFileEventHandler endOfFileEventHandler)
         {
             if (watcher == null)
                 return;
