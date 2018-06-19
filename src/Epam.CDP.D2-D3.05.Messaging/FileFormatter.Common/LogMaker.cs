@@ -6,6 +6,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
+using PostSharp.Aspects;
 using Unity.Interception.PolicyInjection.Pipeline;
 
 namespace FileFormatter.Common
@@ -22,11 +23,20 @@ namespace FileFormatter.Common
 
         public LogMaker(IGlobalSettings globalSettings)
         {
+            if (!globalSettings.LoggingEnabled)
+                return;
+
             if (globalSettings.LoggingType == GlobalSettings.LoggingAspectType.DynamicProxy)
             {
                 UniversalInterceptionBehaviour.BeforeExecutingEvent += OnBeforeExecutingEvent;
                 UniversalInterceptionBehaviour.AfterExecutingEvent += OnAfterExecutingEvent;
             }
+            else if (globalSettings.LoggingType == GlobalSettings.LoggingAspectType.CodeRewriting)
+            {
+                UniversalOnMethodBoundaryAspect.BeforeExecutingEvent += OnBeforeExecutingEvent;
+                UniversalOnMethodBoundaryAspect.AfterExecutingEvent += OnAfterExecutingEvent;
+            }
+
             Settings.Converters.Add(new StringEnumConverter());
         }
 
@@ -36,7 +46,7 @@ namespace FileFormatter.Common
             {
                 JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
                 LogPosition = JoinPointLog.MethodEntry,
-                MethodName = inv.MethodBase.ReflectedType?.FullName,
+                MethodName = inv.MethodBase.ReflectedType?.FullName + "." + inv.MethodBase.Name,
                 Parameters = GetParameters(inv)
             };
             Logger.Trace("{@joinInfo}", logobj);
@@ -47,11 +57,27 @@ namespace FileFormatter.Common
             var logobj = new LogObject
             {
                 JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
-                MethodName = inv.MethodBase.ReflectedType?.FullName,
+                MethodName = inv.MethodBase.ReflectedType?.FullName + "." + inv.MethodBase.Name,
                 LogPosition = JoinPointLog.MethodExit,
                 ReturnedValue = ret.ReturnValue
             };
             Logger.Trace("{@joinInfo}", logobj);
+        }
+
+        private void OnBeforeExecutingEvent(MethodExecutionArgs args)
+        {
+            var logobj = new LogObject
+            {
+                JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
+                LogPosition = JoinPointLog.MethodEntry,
+                MethodName = args.Method.ReflectedType?.FullName + "." + args.Method.Name,
+                //Parameters = GetParameters(inv)
+            };
+            Logger.Trace("{@joinInfo}", logobj);
+        }
+
+        private void OnAfterExecutingEvent(MethodExecutionArgs args)
+        {
         }
 
         private static string FormatLogObj(LogObject obj)
@@ -67,6 +93,11 @@ namespace FileFormatter.Common
                 .Select(x => new { key = x.Name, value = obj.Arguments[x.Name] })
                 .ToDictionary(x => x.key, x => x.value);
         }
+
+        //private static IDictionary<string, object> GetParameters(MethodExecutionArgs obj)
+        //{
+        //}
+
 
         [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
         private class LogObject

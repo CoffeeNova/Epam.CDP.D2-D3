@@ -53,6 +53,7 @@ namespace FileFormatterService
 
         }
 
+        [UniversalOnMethodBoundaryAspect]
         public bool Start(HostControl hostControl)
         {
             _hostControl = hostControl;
@@ -79,6 +80,7 @@ namespace FileFormatterService
             return true;
         }
 
+        [UniversalOnMethodBoundaryAspect]
         public void Stop()
         {
             if (_status != ServiceStatus.Waiting)

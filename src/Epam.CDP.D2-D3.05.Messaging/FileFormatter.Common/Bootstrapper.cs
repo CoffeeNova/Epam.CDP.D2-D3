@@ -16,14 +16,14 @@ namespace FileFormatter.Common
 
         private void RegisterTypes()
         {
-            Container.RegisterInstance(new LogMaker((IGlobalSettings)Container.Resolve(typeof(GlobalSettings))), new ContainerControlledLifetimeManager());
             Container.RegisterInstance(new GlobalSettings
             {
                 LoggingEnabled = true,
                 //Change this setting to switch logging realization 
-                LoggingType = GlobalSettings.LoggingAspectType.DynamicProxy
+                LoggingType = GlobalSettings.LoggingAspectType.CodeRewriting
 
             }, new ContainerControlledLifetimeManager());
+            Container.RegisterInstance(new LogMaker((IGlobalSettings)Container.Resolve(typeof(GlobalSettings))), new ContainerControlledLifetimeManager());
         }
     }
 }

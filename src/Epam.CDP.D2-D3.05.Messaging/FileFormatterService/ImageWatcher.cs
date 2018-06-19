@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Timers;
 using Common;
+using FileFormatter.Common;
 
 namespace FileFormatterService
 {
@@ -26,6 +27,8 @@ namespace FileFormatterService
         }
 
         private bool _isSubscribedToTimerEvent;
+
+        [UniversalOnMethodBoundaryAspect]
         public void WatchDirectories(ICollection<string> monitoringPaths, ICollection<string> extensions, int newPageTimeout = 10)
         {
             ImageExtensions = extensions;
@@ -50,6 +53,7 @@ namespace FileFormatterService
             }
         }
 
+        [UniversalOnMethodBoundaryAspect]
         public void CheckDirectoriesForNewImages()
         {
             _watchers?.ForEach(w =>
