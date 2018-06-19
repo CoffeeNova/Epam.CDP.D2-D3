@@ -6,10 +6,6 @@ namespace FileFormatter.Common
     [Serializable]
     public class UniversalOnMethodBoundaryAspect : OnMethodBoundaryAspect
     {
-        public UniversalOnMethodBoundaryAspect()
-        {
-
-        }
         public override void OnEntry(MethodExecutionArgs args)
         {
             BeforeExecutingEvent?.Invoke(args);

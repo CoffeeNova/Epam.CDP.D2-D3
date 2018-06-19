@@ -71,13 +71,21 @@ namespace FileFormatter.Common
                 JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
                 LogPosition = JoinPointLog.MethodEntry,
                 MethodName = args.Method.ReflectedType?.FullName + "." + args.Method.Name,
-                //Parameters = GetParameters(inv)
+                Parameters = GetParameters(args.Arguments)
             };
             Logger.Trace("{@joinInfo}", logobj);
         }
 
         private void OnAfterExecutingEvent(MethodExecutionArgs args)
         {
+            var logobj = new LogObject
+            {
+                JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
+                LogPosition = JoinPointLog.MethodEntry,
+                MethodName = args.Method.ReflectedType?.FullName + "." + args.Method.Name,
+                ReturnedValue = args.ReturnValue
+            };
+            Logger.Trace("{@joinInfo}", logobj);
         }
 
         private static string FormatLogObj(LogObject obj)
@@ -94,9 +102,19 @@ namespace FileFormatter.Common
                 .ToDictionary(x => x.key, x => x.value);
         }
 
-        //private static IDictionary<string, object> GetParameters(MethodExecutionArgs obj)
-        //{
-        //}
+        private static IDictionary<string, object> GetParameters(Arguments args)
+        {
+            var dict = new Dictionary<string, object>();
+            var i = 0;
+            const string parName = "par";
+            foreach (var arg in args)
+            {
+                dict.Add(parName + i, arg);
+                i++;
+            }
+
+            return dict;
+        }
 
 
         [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]

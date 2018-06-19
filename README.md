@@ -42,3 +42,12 @@ we can install service with several parameters:
 06. Advanced Xml
 
 I've decided to realize this module as class library with single class for each task.
+
+09. Aspect-oriented programming
+
+I've decided change project FileFormatterService from solution in module 5 (Epam.CDP.D2-D3.05.MessageQueues) as most completed.
+I used Microsoft.Unity library as IoC for "dynamic proxy" logging variant, and trial version licence of PostSharp library for "code rewriting".
+Pay attention, that service doesn't work correctly, because the trial licence of Azure ServiceBus is expired, but this situation doesn't affect
+logging.
+
+You can find folder with log file in the base FileFormatterService directory, also you can change loggin realization in FileFormatter.Common.Bootstrapper file.
