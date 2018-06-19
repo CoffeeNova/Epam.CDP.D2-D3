@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
-using CrackMe;
 
 namespace ConsoleApp1
 {
@@ -12,24 +8,16 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-
-            var form1 = new Form1();
-            form1.eval_d.Text = "123";
-            form1.eval_a(null, null);
-
-            var networkInterface = ((IEnumerable<NetworkInterface>)NetworkInterface.GetAllNetworkInterfaces()).FirstOrDefault<NetworkInterface>();
+            var networkInterface = NetworkInterface.GetAllNetworkInterfaces().FirstOrDefault();
             var addressBytes = networkInterface?.GetPhysicalAddress().GetAddressBytes();
-            var data = BitConverter.GetBytes(DateTime.Now.Date.ToBinary());
+            if (addressBytes == null)
+                throw new InvalidOperationException("Please setup atleast one network interface.");
 
-            var source = addressBytes.Select((x, i) => x ^ data[i]).Select(x =>
-            {
-                if (x <= 999)
-                    return x * 10;
-                return x;
-            });
-            var entry = new[] {123};
-            var res = source.Select((x, i) => x - entry[i]);
+            var dateBytes = BitConverter.GetBytes(DateTime.Now.Date.ToBinary());
+            var cryptedAddressBytes = addressBytes.Select((x, i) => (x ^ dateBytes[i]) * 10);
 
+            Console.WriteLine($"Correct key: {string.Join("-", cryptedAddressBytes)}");
+            Console.ReadLine();
         }
     }
 }
