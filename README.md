@@ -39,9 +39,24 @@ we can install service with several parameters:
 
 -attempt: attempt count to read image files before throw exception.
 
+05. Message Queues
+
+I've used MS Azure ServiceBus library to implement this module.
+Also this module has changes from module#9 AOP in the FileFormatterService project. 
+
 06. Advanced Xml
 
 I've decided to realize this module as class library with single class for each task.
+
+07. Debugging
+
+Solution contains a simple code-generator which replicate the behavior of the CrackMe.exe program.
+
+08. Profiling and Optimization
+
+About task#4:
+Unhandled exception was thrown from result() method. I've used 'DebugDiag2 Analysis' tool analyze dump file. Then I manually fixed the problem by
+wrapping this method in try..catch.
 
 09. Aspect-oriented programming
 
