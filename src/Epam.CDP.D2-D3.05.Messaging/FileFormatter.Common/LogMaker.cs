@@ -44,7 +44,7 @@ namespace FileFormatter.Common
         {
             var logobj = new LogObject
             {
-                JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
+                JoinTime = DateTime.Now.ToString(DateFormat),
                 LogPosition = JoinPointLog.MethodEntry,
                 MethodName = inv.MethodBase.ReflectedType?.FullName + "." + inv.MethodBase.Name,
                 Parameters = GetParameters(inv)
@@ -56,7 +56,7 @@ namespace FileFormatter.Common
         {
             var logobj = new LogObject
             {
-                JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
+                JoinTime = DateTime.Now.ToString(DateFormat),
                 MethodName = inv.MethodBase.ReflectedType?.FullName + "." + inv.MethodBase.Name,
                 LogPosition = JoinPointLog.MethodExit,
                 ReturnedValue = ret.ReturnValue
@@ -68,7 +68,7 @@ namespace FileFormatter.Common
         {
             var logobj = new LogObject
             {
-                JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
+                JoinTime = DateTime.Now.ToString(DateFormat),
                 LogPosition = JoinPointLog.MethodEntry,
                 MethodName = args.Method.ReflectedType?.FullName + "." + args.Method.Name,
                 Parameters = GetParameters(args.Arguments)
@@ -80,8 +80,8 @@ namespace FileFormatter.Common
         {
             var logobj = new LogObject
             {
-                JoinTime = DateTime.Now.ToString("dd-MM-yy HH:mm:ss.fff"),
-                LogPosition = JoinPointLog.MethodEntry,
+                JoinTime = DateTime.Now.ToString(DateFormat),
+                LogPosition = JoinPointLog.MethodExit,
                 MethodName = args.Method.ReflectedType?.FullName + "." + args.Method.Name,
                 ReturnedValue = args.ReturnValue
             };
@@ -116,6 +116,7 @@ namespace FileFormatter.Common
             return dict;
         }
 
+        private const string DateFormat = "dd-MM-yy HH:mm:ss.fff";
 
         [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
         private class LogObject
