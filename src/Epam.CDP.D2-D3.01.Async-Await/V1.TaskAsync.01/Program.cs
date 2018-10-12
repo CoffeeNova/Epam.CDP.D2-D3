@@ -25,7 +25,7 @@ namespace V1.TaskAsync._01
                     {
                         Console.WriteLine($"Sum = {sum.Result}");
                         semaphore.Release();
-;                    }, TaskContinuationOptions.RunContinuationsAsynchronously);
+                    }, TaskContinuationOptions.RunContinuationsAsynchronously);
                     _sumTask.ContinueWith(x =>
                     {
                         Console.WriteLine("Restart calculations.");
